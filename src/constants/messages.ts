@@ -24,6 +24,8 @@ const errorMessages = {
   invalidPassword: "Invalid Password",
   departmentExists: "Department Already exists",
   departmentNotFound: "Department not found",
+  roleExists: "Role Already exists",
+  roleNotFound: "Role not found",
 };
 
 const successMessages = {
@@ -31,6 +33,7 @@ const successMessages = {
   healthOk: "Server is healthy",
   industryDeleted: "Industry Deleted successfully",
   departmentDeleted: "Department Deleted successfully",
+  roleDeleted: "Role Deleted successfully",
 };
 
 export { errorMessages, successMessages };

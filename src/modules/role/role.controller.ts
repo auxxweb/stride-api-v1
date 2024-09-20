@@ -1,15 +1,16 @@
 import { NextFunction, Response } from "express";
+import { FilterQuery } from "mongoose";
+
 import { errorWrapper } from "../../middleware/errorWrapper.js";
 import { responseUtils } from "../../utils/response.utils.js";
-import { departmentService } from "./department.service.js";
+import { roleService } from "./role.service.js";
 import { RequestWithCompany } from "../../interface/app.interface.js";
 import { getPaginationOptions } from "../../utils/pagination.utils.js";
-import { FilterQuery } from "mongoose";
 import { ObjectId } from "../../constants/type.js";
 
-const createDepartment = errorWrapper(
+const createRole = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
-    const data = await departmentService.createDepartment({
+    const data = await roleService.createRole({
       ...req.body,
       companyId: req?.company?._id,
     });
@@ -20,8 +21,7 @@ const createDepartment = errorWrapper(
     });
   },
 );
-
-const getAllDepartments = errorWrapper(
+const getAllRoles = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     let query: FilterQuery<any> = {
       isDeleted: false,
@@ -47,13 +47,12 @@ const getAllDepartments = errorWrapper(
         ],
       };
     }
-    console.log(req?.company?._id, "companyIdddddd");
 
-    const data = await departmentService.getAllDepartments({
+    const data = await roleService.getAllRoles({
       query: {
         ...query,
-        ...(req?.query?.companyId && {
-          companyId: new ObjectId(String(req.query?.companyId)),
+        ...(req?.query?.departmentId && {
+          departmentId: new ObjectId(String(req.query?.departmentId)),
         }),
       },
       options: {
@@ -65,16 +64,16 @@ const getAllDepartments = errorWrapper(
 
     return responseUtils.success(res, {
       data,
-      status: 200,
+      status: 201,
     });
   },
 );
 
-const getDepartmentById = errorWrapper(
+const getRoleById = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
-    const data = await departmentService.getDepartmentById(
+    const data = await roleService.getRoleById(
       String(req?.company?._id),
-      req?.params?.id,
+      req.params?.id,
     );
 
     return responseUtils.success(res, {
@@ -84,12 +83,26 @@ const getDepartmentById = errorWrapper(
   },
 );
 
-const updateDepartment = errorWrapper(
+const deleteRole = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
-    const data = await departmentService.updateDepartment({
+    const data = await roleService.deleteRole(
+      String(req?.company?._id),
+      req.params?.id,
+    );
+
+    return responseUtils.success(res, {
+      data,
+      status: 200,
+    });
+  },
+);
+
+const updateRole = errorWrapper(
+  async (req: RequestWithCompany, res: Response, next: NextFunction) => {
+    const data = await roleService.updateRole({
       ...req.body,
       companyId: req?.company?._id,
-      departmentId: req?.params?.id,
+      roleId: req.params?.id,
     });
 
     return responseUtils.success(res, {
@@ -99,24 +112,4 @@ const updateDepartment = errorWrapper(
   },
 );
 
-const deleteDepartment = errorWrapper(
-  async (req: RequestWithCompany, res: Response, next: NextFunction) => {
-    const data = await departmentService.deleteDepartment(
-      String(req?.company?._id),
-      req?.params?.id,
-    );
-
-    return responseUtils.success(res, {
-      data,
-      status: 200,
-    });
-  },
-);
-
-export {
-  createDepartment,
-  getAllDepartments,
-  getDepartmentById,
-  updateDepartment,
-  deleteDepartment,
-};
+export { createRole, getAllRoles, getRoleById, deleteRole, updateRole };

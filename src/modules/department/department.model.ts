@@ -1,7 +1,7 @@
 import { ObjectId } from "../../constants/type.js";
 import { Model, Schema, model } from "mongoose";
 
-export const DepartmentSchema = new Schema(
+const DepartmentSchema = new Schema(
   {
     name: {
       type: String,
@@ -24,8 +24,6 @@ export const DepartmentSchema = new Schema(
 export const getDepartmentCollection = async (
   companyId: string,
 ): Promise<Model<any>> => {
-  console.log(companyId, "iddddddddd");
-
   const collectionName = `department_${companyId}`;
   return model(collectionName, DepartmentSchema, collectionName);
 };
