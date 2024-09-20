@@ -15,6 +15,18 @@ export interface RequestWithUser extends Request {
   };
 }
 
+export interface RequestWithCompany extends Request {
+  company?: {
+    _id?: string;
+    email?: string;
+    password?: string;
+    status?: string;
+    logo?: string;
+    phoneNumber?: string;
+    companyId?: string;
+  };
+}
+
 export interface sendMailData {
   to: string;
   text: string;
@@ -22,6 +34,6 @@ export interface sendMailData {
 }
 
 export interface LocationData {
-  lat:number,
-  lon:number
+  lat: number;
+  lon: number;
 }

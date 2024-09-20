@@ -6,7 +6,6 @@ import { successMessages } from "../constants/messages.js";
 
 const healthCheck = errorWrapper(
   async (req: Request, res: Response, next: NextFunction) => {
-
     return responseUtils.success(res, {
       data: {
         message: successMessages.healthOk,

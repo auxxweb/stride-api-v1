@@ -1,5 +1,5 @@
-import { ObjectId } from '../../constants/type.js'
-import { Schema, model } from 'mongoose'
+import { ObjectId } from "../../constants/type.js";
+import { Schema, model } from "mongoose";
 
 const CompanySchema = new Schema(
   {
@@ -23,18 +23,18 @@ const CompanySchema = new Schema(
     location: {
       type: {
         type: String,
-        enum: ['Point'],
-        default: 'Point',
-        index: '2dsphere',
+        enum: ["Point"],
+        default: "Point",
+        index: "2dsphere",
       },
       coordinates: {
         type: [Number],
-        index: '2dsphere',
+        index: "2dsphere",
       },
     },
     industry: {
       type: ObjectId,
-      ref:"industries"
+      ref: "industries",
     },
     theme: {
       type: String,
@@ -46,8 +46,8 @@ const CompanySchema = new Schema(
     coverImage: {
       type: String,
     },
-    phoneNumber:{
-          type:Number
+    phoneNumber: {
+      type: Number,
     },
     companyId: {
       type: String,
@@ -64,7 +64,9 @@ const CompanySchema = new Schema(
   {
     timestamps: true,
   },
-)
+);
 
-const Company = model('companies', CompanySchema)
-export default Company
+CompanySchema.index({ location: "2dsphere" });
+
+const Company = model("companies", CompanySchema);
+export default Company;

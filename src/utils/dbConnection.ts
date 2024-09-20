@@ -3,8 +3,7 @@ import mongoose from "mongoose";
 import { appConfig } from "../config/appConfig.js";
 
 const connect = async (): Promise<any> => {
-console.log(appConfig?.mongoUrl,"mongourl");
-
+  console.log(appConfig?.mongoUrl, "mongourl");
 
   await mongoose
     .connect(String(appConfig.mongoUrl))

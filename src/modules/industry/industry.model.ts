@@ -1,11 +1,11 @@
-import { Schema, model } from 'mongoose'
+import { Schema, model } from "mongoose";
 
 const IndustrySchema = new Schema(
   {
     name: {
       type: String,
       required: true,
-      unique:true
+      unique: true,
     },
     image: {
       type: String,
@@ -18,7 +18,7 @@ const IndustrySchema = new Schema(
   {
     timestamps: true,
   },
-)
+);
 
-const Industry = model('industries', IndustrySchema)
-export default Industry
+const Industry = model("industries", IndustrySchema);
+export default Industry;

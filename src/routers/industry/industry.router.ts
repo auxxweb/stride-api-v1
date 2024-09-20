@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Router } from 'express'
+import { Router } from "express";
 
-// import { protect } from "../../middleware/auth.middleware.js";
+import { superAdminProtect } from "../../middleware/auth.middleware.js";
 import {
   createIndustry,
   deleteIndustry,
   getAllIndustries,
   getIndustryById,
   updateIndustry,
-} from '../../modules/industry/industry.controller.js'
+} from "../../modules/industry/industry.controller.js";
 
-const router = Router()
-router.post('/', createIndustry)
-router.get('/', getAllIndustries)
-router.get('/:id', getIndustryById)
-router.patch('/:id', updateIndustry)
-router.delete('/:id', deleteIndustry)
+const router = Router();
+router.post("/", superAdminProtect(), createIndustry);
+router.get("/", superAdminProtect(), getAllIndustries);
+router.get("/:id", superAdminProtect(), getIndustryById);
+router.patch("/:id", superAdminProtect(), updateIndustry);
+router.delete("/:id", superAdminProtect(), deleteIndustry);
 
-export default router
+export default router;

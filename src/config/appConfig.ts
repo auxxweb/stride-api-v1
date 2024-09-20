@@ -17,5 +17,5 @@ export const appConfig = {
   awsAccessKey: process.env.AWS_ACCESS_KEY ?? "",
   awsSecretKey: process.env.AWS_SECRET_KEY ?? "",
   awsBucketName: process.env.AWS_BUCKET_NAME ?? "",
-  companyStartCount:process.env.CMPNY_START_COUNT ?? 10000
+  companyStartCount: process.env.CMPNY_START_COUNT ?? 10000,
 };

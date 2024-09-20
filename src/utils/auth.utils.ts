@@ -3,8 +3,6 @@ import bcrypt from "bcryptjs";
 import { appConfig } from "../config/appConfig.js";
 import { NextFunction, Response } from "express";
 
-
-
 export const generateToken = async (
   data: any,
   expiryTime?: string | number,
