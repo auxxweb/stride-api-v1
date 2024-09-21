@@ -1,5 +1,4 @@
 const errorMessages = {
-  userExists: "User already exists",
   userNotFound: "User not found",
   userAccountBlocked:
     "Your account has been blocked, contact Admin for more details",
@@ -26,6 +25,8 @@ const errorMessages = {
   departmentNotFound: "Department not found",
   roleExists: "Role Already exists",
   roleNotFound: "Role not found",
+  userExists: "User already exists",
+  companyNotFound: "Company Not found",
 };
 
 const successMessages = {

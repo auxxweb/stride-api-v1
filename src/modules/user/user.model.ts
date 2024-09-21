@@ -1,5 +1,4 @@
-import { Schema, model } from "mongoose";
-// import { UserApprovalStatus, UserRole, UserStatus } from "./user.enum.js";
+import { Model, Schema, model } from "mongoose";
 import { ObjectId } from "../../constants/type.js";
 
 const UserSchema = new Schema(
@@ -10,70 +9,74 @@ const UserSchema = new Schema(
     lastName: {
       type: String,
     },
-    userName: {
-      type: String,
-    },
     email: {
       type: String,
       trim: true,
-      required: true,
       set: (value: string) => value.toLowerCase(),
     },
-    role: {
+    userId: {
       type: String,
-      // enum: UserRole,
-      // default: UserRole.USER,
+      required: true,
     },
     phoneNumber: {
       type: String,
       sparse: true,
       trim: true,
     },
+    tempPassword: {
+      type: String,
+    },
     password: {
       type: String,
       minlength: 4,
     },
-    status: {
-      type: String,
-      // enum: UserStatus,
-      // default: UserStatus.ACTIVE,
+    adhar: {
+      type: {
+        number: Number,
+        images: [String],
+      },
     },
-    approvalStatus: {
-      type: String,
-      // enum: UserApprovalStatus,
-      // default: UserApprovalStatus.PENDING,
-    },
-    savedPosts: {
-      type: [ObjectId],
-      ref: "posts",
-    },
-    followings: {
-      type: [ObjectId],
-      ref: "users",
-    },
-    followers: {
-      type: [ObjectId],
-      ref: "users",
-    },
-
-    followingAuthors: {
-      type: [ObjectId],
-      ref: "users",
+    panCard: {
+      type: {
+        number: String,
+        images: [String],
+      },
     },
     profileImage: {
       type: String,
     },
-    coverImage: {
+    departmentCollection: { type: String, required: true },
+    departmentId: {
+      type: ObjectId,
+      required: true,
+      refPath: "departmentCollection",
+    },
+    roleCollection: {
       type: String,
+      required: true,
     },
-    Groups: {
-      type: [ObjectId],
+    roleId: {
+      type: ObjectId,
+      refPath: "roleCollection",
+      required: true,
     },
-    postCount: {
+    strideScore: {
       type: Number,
+      default: 50,
+    },
+    status: {
+      type: Boolean,
+      default: false,
+    },
+    additionalDetails: {
+      type: String,
     },
     resetId: {
       type: String,
+    },
+    companyId: {
+      type: ObjectId,
+      ref: "companies",
     },
     isDeleted: {
       type: Boolean,
@@ -83,13 +86,9 @@ const UserSchema = new Schema(
   { timestamps: true },
 );
 
-// UserSchema.pre("save", function (next) {
-//   if (this.role === UserRole.USER) {
-//     this.status = UserStatus.ACTIVE;
-//   }
-//   next();
-// });
-
-const User = model("users", UserSchema);
-
-export default User;
+export const getUserCollection = async (
+  companyId: string,
+): Promise<Model<any>> => {
+  const collectionName = `user_${companyId}`;
+  return model(collectionName, UserSchema, collectionName);
+};

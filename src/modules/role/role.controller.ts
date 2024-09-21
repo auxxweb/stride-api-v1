@@ -21,6 +21,7 @@ const createRole = errorWrapper(
     });
   },
 );
+
 const getAllRoles = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     let query: FilterQuery<any> = {

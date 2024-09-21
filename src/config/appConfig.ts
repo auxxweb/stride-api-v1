@@ -18,4 +18,5 @@ export const appConfig = {
   awsSecretKey: process.env.AWS_SECRET_KEY ?? "",
   awsBucketName: process.env.AWS_BUCKET_NAME ?? "",
   companyStartCount: process.env.CMPNY_START_COUNT ?? 10000,
+  userStartCount: process.env.USER_START_COUNT ?? 10000,
 };
