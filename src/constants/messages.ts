@@ -1,5 +1,4 @@
 const errorMessages = {
-  userNotFound: "User not found",
   userAccountBlocked:
     "Your account has been blocked, contact Admin for more details",
   unauthorized: "You are unauthorized to access this platform",
@@ -27,6 +26,8 @@ const errorMessages = {
   roleNotFound: "Role not found",
   userExists: "User already exists",
   companyNotFound: "Company Not found",
+  userNotFound: "User not found",
+  invalidOldPassword: "Invalid old password",
 };
 
 const successMessages = {
@@ -35,6 +36,7 @@ const successMessages = {
   industryDeleted: "Industry Deleted successfully",
   departmentDeleted: "Department Deleted successfully",
   roleDeleted: "Role Deleted successfully",
+  companyDeleted: "Company Deleted successfully",
 };
 
 export { errorMessages, successMessages };

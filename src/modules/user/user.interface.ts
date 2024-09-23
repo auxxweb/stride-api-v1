@@ -17,3 +17,8 @@ export interface CreateUser {
   additionalDetails: string;
   companyId: string;
 }
+
+export interface UserLoginData {
+  userId: string;
+  password: string;
+}

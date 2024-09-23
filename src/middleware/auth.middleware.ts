@@ -151,12 +151,14 @@ export const companyProtect = () => {
         let decoded: any = {};
 
         decoded = jwt.verify(token, appConfig.jwtSecret);
+        console.log(decoded, "decoded");
 
         if (decoded) {
           const company: any = await Company.findOne({
             _id: new ObjectId(decoded?.id),
             isDeleted: false,
-          }).select("-password");
+          }).select("-password -images");
+          console.log(company, "company");
 
           if (company === null) {
             res.status(401).send({ message: "Unauthorized" });

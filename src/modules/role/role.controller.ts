@@ -12,7 +12,8 @@ const createRole = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     const data = await roleService.createRole({
       ...req.body,
-      companyId: req?.company?._id,
+      companyId: req?.company?.companyId,
+      companyObjectId: req?.company?._id,
     });
 
     return responseUtils.success(res, {
@@ -60,7 +61,7 @@ const getAllRoles = errorWrapper(
         ...paginationOptions,
         sort: { createdAt: -1 },
       },
-      companyId: String(req?.company?._id),
+      companyId: String(req?.company?.companyId),
     });
 
     return responseUtils.success(res, {
@@ -73,7 +74,7 @@ const getAllRoles = errorWrapper(
 const getRoleById = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     const data = await roleService.getRoleById(
-      String(req?.company?._id),
+      String(req?.company?.companyId),
       req.params?.id,
     );
 
@@ -87,7 +88,7 @@ const getRoleById = errorWrapper(
 const deleteRole = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     const data = await roleService.deleteRole(
-      String(req?.company?._id),
+      String(req?.company?.companyId),
       req.params?.id,
     );
 
@@ -102,7 +103,7 @@ const updateRole = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     const data = await roleService.updateRole({
       ...req.body,
-      companyId: req?.company?._id,
+      companyId: req?.company?.companyId,
       roleId: req.params?.id,
     });
 

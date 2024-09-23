@@ -3,6 +3,7 @@ import { FilterQuery, QueryOptions } from "mongoose";
 export interface CreateDepartmentData {
   name: string;
   companyId: string;
+  companyObjectId: string;
 }
 
 export interface UpdateDepartmentData extends CreateDepartmentData {

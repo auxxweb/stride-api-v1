@@ -11,7 +11,8 @@ const createDepartment = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     const data = await departmentService.createDepartment({
       ...req.body,
-      companyId: req?.company?._id,
+      companyId: req?.company?.companyId,
+      companyObjectId: req?.company?._id,
     });
 
     return responseUtils.success(res, {
@@ -47,7 +48,6 @@ const getAllDepartments = errorWrapper(
         ],
       };
     }
-    console.log(req?.company?._id, "companyIdddddd");
 
     const data = await departmentService.getAllDepartments({
       query: {
@@ -60,7 +60,7 @@ const getAllDepartments = errorWrapper(
         ...paginationOptions,
         sort: { createdAt: -1 },
       },
-      companyId: String(req?.company?._id),
+      companyId: String(req?.company?.companyId),
     });
 
     return responseUtils.success(res, {
@@ -73,7 +73,7 @@ const getAllDepartments = errorWrapper(
 const getDepartmentById = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     const data = await departmentService.getDepartmentById(
-      String(req?.company?._id),
+      String(req?.company?.companyId),
       req?.params?.id,
     );
 
@@ -88,7 +88,7 @@ const updateDepartment = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     const data = await departmentService.updateDepartment({
       ...req.body,
-      companyId: req?.company?._id,
+      companyId: req?.company?.companyId,
       departmentId: req?.params?.id,
     });
 
@@ -102,7 +102,7 @@ const updateDepartment = errorWrapper(
 const deleteDepartment = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     const data = await departmentService.deleteDepartment(
-      String(req?.company?._id),
+      String(req?.company?.companyId),
       req?.params?.id,
     );
 

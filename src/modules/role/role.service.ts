@@ -8,6 +8,7 @@ const createRole = async ({
   name,
   companyId,
   departmentId,
+  companyObjectId,
 }: CreateRoleData): Promise<any> => {
   const Role = await getRoleCollection(companyId);
 
@@ -22,7 +23,7 @@ const createRole = async ({
 
   return await Role.create({
     name,
-    companyId,
+    companyId: companyObjectId,
     departmentId,
     departmentCollection: `role_${companyId}`,
   });

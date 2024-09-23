@@ -11,6 +11,7 @@ import { ObjectId } from "../../constants/type.js";
 const createDepartment = async ({
   name,
   companyId,
+  companyObjectId,
 }: CreateDepartmentData): Promise<any> => {
   const Department = await getDepartmentCollection(companyId);
 
@@ -25,7 +26,7 @@ const createDepartment = async ({
 
   return await Department.create({
     name,
-    companyId,
+    companyId: companyObjectId,
   });
 };
 

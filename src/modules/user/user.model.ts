@@ -14,7 +14,7 @@ const UserSchema = new Schema(
       trim: true,
       set: (value: string) => value.toLowerCase(),
     },
-    userId: {
+    employId: {
       type: String,
       required: true,
     },
@@ -70,6 +70,11 @@ const UserSchema = new Schema(
     },
     additionalDetails: {
       type: String,
+    },
+    strideId: {
+      type: String,
+      required: true,
+      unique: true,
     },
     resetId: {
       type: String,

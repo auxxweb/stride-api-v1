@@ -1,10 +1,11 @@
 import bcrypt from "bcryptjs";
 import { generateToken, hashValue } from "../../utils/auth.utils.js";
-import { errorMessages } from "../../constants/messages.js";
+import { errorMessages, successMessages } from "../../constants/messages.js";
 import { generateAPIError } from "../../errors/apiError.js";
 import { CompanyData, CompanyLoginData } from "./company.interface.js";
 import Company from "./company.model.js";
 import { createCompanyId } from "./company.utils.js";
+import { ObjectId } from "../../constants/type.js";
 
 const createCompany = async ({
   name,
@@ -117,11 +118,157 @@ const companyLogin = async ({
     updatedAt: company?.updatedAt,
     token: await generateToken({
       id: String(company?._id),
+      companyId: company?.companyId,
     }),
+  };
+};
+
+const getAllCompanies = async ({ query = {}, options }: any): Promise<any> => {
+  const [data, totalCount] = await Promise.all([
+    await Company.find(query, {}, options)
+      .populate("industry")
+      .select("-password"),
+    await Company.countDocuments(query),
+  ]);
+
+  return { data, totalCount };
+};
+
+const getCompanyById = async (industryId: string): Promise<any> => {
+  return await Company.findOne({
+    _id: new ObjectId(industryId),
+    isDeleted: false,
+  })
+    .populate("industry")
+    .select("-password");
+};
+
+const updateCompany = async (
+  companyId: string,
+  {
+    name,
+    email,
+    password,
+    oldPassword,
+    address,
+    location,
+    industry,
+    theme,
+    logo,
+    coverImage,
+    phoneNumber,
+    images,
+  }: any,
+): Promise<any> => {
+  const company = await Company.findOne({
+    _id: new ObjectId(companyId),
+    isDeleted: false,
+  });
+
+  let hashedPassword;
+
+  if (company === null) {
+    return await generateAPIError(errorMessages.companyNotFound, 400);
+  }
+
+  if (password && oldPassword) {
+    const comparePassword = await bcrypt.compare(
+      oldPassword,
+      company?.password ?? "",
+    );
+    if (!comparePassword) {
+      return await generateAPIError(errorMessages.invalidOldPassword, 400);
+    }
+  }
+
+  if (password && oldPassword) {
+    hashedPassword = await hashValue(password ?? "", 10);
+    console.log(hashedPassword, "hashword");
+  }
+  console.log(name, "name-name", password, "password", oldPassword);
+
+  return await Company.findOneAndUpdate(
+    {
+      _id: new ObjectId(companyId),
+      isDeleted: false,
+    },
+    {
+      ...(name && {
+        name,
+      }),
+      ...(email && {
+        email: email.toLowerCase(),
+      }),
+      ...(password &&
+        oldPassword && {
+          password: hashedPassword,
+        }),
+      ...(address && {
+        address,
+      }),
+      ...(location && {
+        location: {
+          coordinates: [location?.lon, location?.lat],
+        },
+      }),
+      ...(industry && {
+        industry,
+      }),
+      ...(theme && {
+        theme,
+      }),
+      ...(logo && {
+        logo,
+      }),
+      ...(coverImage && {
+        coverImage,
+      }),
+      ...(phoneNumber && {
+        phoneNumber,
+      }),
+      ...(images && {
+        images,
+      }),
+    },
+    {
+      new: true,
+    },
+  );
+};
+
+const deleteCompany = async (companyId: string): Promise<any> => {
+  const company = await Company.findOne({
+    _id: new ObjectId(companyId),
+    isDeleted: false,
+  });
+
+  if (company === null) {
+    return await generateAPIError(errorMessages.companyNotFound, 400);
+  }
+
+  await Company.findOneAndUpdate(
+    {
+      _id: new ObjectId(companyId),
+      isDeleted: false,
+    },
+    {
+      isDeleted: true,
+    },
+    {
+      new: true,
+    },
+  );
+
+  return {
+    message: successMessages.departmentDeleted,
   };
 };
 
 export const companyService = {
   createCompany,
   companyLogin,
+  getAllCompanies,
+  getCompanyById,
+  updateCompany,
+  deleteCompany,
 };
