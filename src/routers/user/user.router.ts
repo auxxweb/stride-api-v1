@@ -1,15 +1,22 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Router } from "express";
-import { companyProtect } from "../../middleware/auth.middleware.js";
+import {
+  companyProtect,
+  userProtect,
+} from "../../middleware/auth.middleware.js";
 import {
   createUser,
   getAllUsers,
+  getUserProfile,
+  updateUserProfile,
   userLogin,
 } from "../../modules/user/user.controller.js";
 
 const router = Router();
-router.post("/", companyProtect(), createUser);
+router.post("/", await companyProtect(), createUser);
 router.post("/login", userLogin);
-router.get("/", companyProtect(), getAllUsers);
+router.get("/", await companyProtect(), getAllUsers);
+router.get("/profile", await userProtect(), getUserProfile);
+router.patch("/", await userProtect(), updateUserProfile);
 
 export default router;

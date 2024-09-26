@@ -11,100 +11,78 @@ import {
 import { ObjectId } from "../constants/type.js";
 import SuperAdmin from "../modules/superAdmin/superAdmin.model.js";
 import Company from "../modules/company/company.model.js";
+import { getUserCollection } from "../modules/user/user.model.js";
 
-// export const protect = (allowedRoles?: string[]) => {
-//   return async (req: RequestWithUser, res: Response, next: NextFunction) => {
-//     let token: any;
+export const protect = async (): Promise<any> => {
+  return async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    let token: any;
 
-//     if (req.headers.authorization?.startsWith("Bearer") === true) {
-//       try {
-//         token = req.headers.authorization.split(" ")[1];
-//         let decoded: any = {};
+    if (req.headers.authorization?.startsWith("Bearer") === true) {
+      try {
+        token = req.headers.authorization.split(" ")[1];
+        let decoded: any = {};
 
-//         decoded = jwt.verify(token, appConfig.jwtSecret);
+        decoded = jwt.verify(token, appConfig.jwtSecret);
 
-//         if (decoded) {
-//           const user: any = await User.findOne({
-//             _id: new ObjectId(decoded?.id),
-//             isDeleted: false,
-//           }).select("-password");
+        if (decoded) {
+          next();
+        } else {
+          res.status(401).send({ message: "Unauthorized" });
+        }
+      } catch (error) {
+        console.error(error);
+        res.status(401).send({ message: "Unauthorized" });
+      }
+    }
+    if (!token) {
+      res.status(401).send({ message: "Unauthorized, No token" });
+    }
+  };
+};
+export const userProtect = async (): Promise<any> => {
+  return async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    let token: any;
 
-//           if (user?.status?.status === UserStatus.INACTIVE) {
-//             res.status(401).send({ message: errorMessages.userAccountBlocked });
-//           }
+    if (
+      req?.headers?.authorization?.startsWith("Bearer") === true &&
+      req.headers.authorization.split(" ")[1]
+    ) {
+      console.log(req.headers.authorization.split(" ")[1], "calling.....");
 
-//           eslint-disable-next-line security/detect-possible-timing-attacks
+      try {
+        token = req.headers.authorization.split(" ")[1];
+        let decoded: any = {};
 
-//           if (allowedRoles == null) {
-//             req.user = user;
-//             next();
-//           } else if (user && allowedRoles.includes(user.role)) {
-//             req.user = user;
-//             next();
-//           } else {
-//             res.status(403).send({ message: "Forbidden" });
-//           }
-//         } else {
-//           res.status(401).send({ message: "Unauthorized" });
-//         }
-//       } catch (error) {
-//         console.error(error);
-//         res.status(401).send({ message: "Unauthorized" });
-//       }
-//     }
-//     if (!token) {
-//       res.status(401).send({ message: "Unauthorized, No token" });
-//     }
-//   };
-// };
-// export const optionalProtect = (allowedRoles?: string[]) => {
-//   return async (req: RequestWithUser, res: Response, next: NextFunction) => {
-//     let token: any;
+        decoded = jwt.verify(token, appConfig.jwtSecret);
 
-//     if (
-//       req?.headers?.authorization?.startsWith("Bearer") === true &&
-//       req.headers.authorization.split(" ")[1]
-//     ) {
-//       console.log(req.headers.authorization.split(" ")[1], "calling.....");
+        if (decoded) {
+          const User = await getUserCollection(decoded?.companyId);
+          const user: any = await User.findOne({
+            _id: new ObjectId(decoded?.id),
+            isDeleted: false,
+          }).select("-password");
+          if (user === null) {
+            res.status(401).send({ message: "Unauthorized" });
+          } else {
+            req.user = user;
+            req.companyCode = decoded?.companyId;
+            next();
+          }
+        } else {
+          res.status(401).send({ message: "Unauthorized" });
+        }
+      } catch (error) {
+        console.error(error);
+        res.status(401).send({ message: "Unauthorized" });
+      }
+    }
+    if (!token) {
+      res.status(401).send({ message: "Unauthorized, No token" });
+    }
+  };
+};
 
-//       try {
-//         token = req.headers.authorization.split(" ")[1];
-//         let decoded: any = {};
-
-//         decoded = jwt.verify(token, appConfig.jwtSecret);
-
-//         if (decoded) {
-//           const user: any = await User.findOne({
-//             _id: new ObjectId(decoded?.id),
-//             isDeleted: false,
-//           }).select("-password");
-
-//           if (allowedRoles == null) {
-//             req.user = user;
-//             next();
-//           } else if (user && allowedRoles.includes(user.role)) {
-//             req.user = user;
-//             next();
-//           } else {
-//             res.status(403).send({ message: "Forbidden" });
-//           }
-//         } else {
-//           res.status(401).send({ message: "Unauthorized" });
-//         }
-//       } catch (error) {
-//         console.error(error);
-//         res.status(401).send({ message: "Unauthorized" });
-//       }
-//     } else {
-//       next();
-//     }
-//     if (!token) {
-//       res.status(401).send({ message: "Unauthorized, No token" });
-//     }
-//   };
-// };
-
-export const superAdminProtect = () => {
+export const superAdminProtect = async (): Promise<any> => {
   return async (req: RequestWithUser, res: Response, next: NextFunction) => {
     let token: any;
 
@@ -141,7 +119,7 @@ export const superAdminProtect = () => {
   };
 };
 
-export const companyProtect = () => {
+export const companyProtect = async (): Promise<any> => {
   return async (req: RequestWithCompany, res: Response, next: NextFunction) => {
     let token: any;
 

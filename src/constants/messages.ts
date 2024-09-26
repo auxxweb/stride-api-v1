@@ -28,6 +28,8 @@ const errorMessages = {
   companyNotFound: "Company Not found",
   userNotFound: "User not found",
   invalidOldPassword: "Invalid old password",
+  workHistoryExists: "Employ Work history already exists",
+  workHistoryNotfound: "WorkHistory not found",
 };
 
 const successMessages = {

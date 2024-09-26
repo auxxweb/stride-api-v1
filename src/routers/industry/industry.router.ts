@@ -11,10 +11,10 @@ import {
 } from "../../modules/industry/industry.controller.js";
 
 const router = Router();
-router.post("/", superAdminProtect(), createIndustry);
-router.get("/", superAdminProtect(), getAllIndustries);
-router.get("/:id", superAdminProtect(), getIndustryById);
-router.patch("/:id", superAdminProtect(), updateIndustry);
-router.delete("/:id", superAdminProtect(), deleteIndustry);
+router.post("/", await superAdminProtect(), createIndustry);
+router.get("/", await superAdminProtect(), getAllIndustries);
+router.get("/:id", await superAdminProtect(), getIndustryById);
+router.patch("/:id", await superAdminProtect(), updateIndustry);
+router.delete("/:id", await superAdminProtect(), deleteIndustry);
 
 export default router;

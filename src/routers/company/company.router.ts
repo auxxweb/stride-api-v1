@@ -16,12 +16,12 @@ import {
 } from "../../modules/company/company.controller.js";
 
 const router = Router();
-router.post("/", superAdminProtect(), createCompany);
+router.post("/", await superAdminProtect(), createCompany);
 router.post("/login", companyLogin);
-router.get("/", superAdminProtect(), getAllCompanies);
-router.get("/:id", superAdminProtect(), getCompanyById);
-router.patch("/:id", companyProtect(), updateCompanyProfile);
-router.patch("/admin/:id", superAdminProtect(), updateCompany);
-router.delete("/:id", superAdminProtect(), deleteCompany);
+router.get("/", await superAdminProtect(), getAllCompanies);
+router.get("/:id", await superAdminProtect(), getCompanyById);
+router.patch("/:id", await companyProtect(), updateCompanyProfile);
+router.patch("/admin/:id", await superAdminProtect(), updateCompany);
+router.delete("/:id", await superAdminProtect(), deleteCompany);
 
 export default router;

@@ -1,5 +1,8 @@
-import { Model, Schema, model } from "mongoose";
+/* eslint-disable security/detect-object-injection */
+/* eslint-disable @typescript-eslint/strict-boolean-expressions */
+import mongoose from "mongoose";
 import { ObjectId } from "../../constants/type.js";
+const { model, Schema } = mongoose;
 
 const UserSchema = new Schema(
   {
@@ -66,7 +69,7 @@ const UserSchema = new Schema(
     },
     status: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     additionalDetails: {
       type: String,
@@ -93,7 +96,10 @@ const UserSchema = new Schema(
 
 export const getUserCollection = async (
   companyId: string,
-): Promise<Model<any>> => {
-  const collectionName = `user_${companyId}`;
+): Promise<mongoose.Model<any>> => {
+  const collectionName = `users${companyId}`;
+  // if (models[collectionName]) {
+  //   return models[collectionName]; // Return the existing model
+  // }
   return model(collectionName, UserSchema, collectionName);
 };

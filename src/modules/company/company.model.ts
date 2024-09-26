@@ -11,7 +11,7 @@ const CompanySchema = new Schema(
       type: String,
       trim: true,
       required: true,
-      set: (value: string) => value.toLowerCase(),
+      set: (value: string) => value.toLowerCase(), // Ensures email is always stored in lowercase
     },
     password: {
       type: String,
@@ -23,22 +23,21 @@ const CompanySchema = new Schema(
     location: {
       type: {
         type: String,
-        enum: ["Point"],
+        enum: ["Point"], // Ensures the GeoJSON format is correct
         default: "Point",
-        index: "2dsphere",
+        index: "2dsphere", // Adds the necessary geospatial index
       },
       coordinates: {
-        type: [Number],
-        index: "2dsphere",
+        type: [Number], // Expecting an array of numbers [longitude, latitude]
+        index: "2dsphere", // Ensures proper 2dsphere index for geospatial queries
       },
     },
     industry: {
       type: ObjectId,
-      ref: "industries",
+      ref: "industries", // Reference to an 'industries' collection
     },
     theme: {
       type: String,
-      // default:""
     },
     logo: {
       type: String,
@@ -47,14 +46,14 @@ const CompanySchema = new Schema(
       type: String,
     },
     phoneNumber: {
-      type: Number,
+      type: Number, // Consider using String for better phone number flexibility
     },
     companyId: {
       type: String,
       required: true,
     },
     images: {
-      type: [String],
+      type: [String], // Array of image URLs or paths
     },
     isDeleted: {
       type: Boolean,
@@ -62,11 +61,13 @@ const CompanySchema = new Schema(
     },
   },
   {
-    timestamps: true,
+    timestamps: true, // Automatically manages createdAt and updatedAt fields
   },
 );
 
+// Ensure the 2dsphere index for geospatial queries
 CompanySchema.index({ location: "2dsphere" });
 
 const Company = model("companies", CompanySchema);
+
 export default Company;

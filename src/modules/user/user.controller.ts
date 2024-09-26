@@ -3,7 +3,10 @@ import { NextFunction, Response } from "express";
 
 import { errorWrapper } from "../../middleware/errorWrapper.js";
 import { responseUtils } from "../../utils/response.utils.js";
-import { RequestWithCompany } from "../../interface/app.interface.js";
+import {
+  RequestWithCompany,
+  RequestWithUser,
+} from "../../interface/app.interface.js";
 // import { getPaginationOptions } from '../../utils/pagination.utils.js'
 // import { ObjectId } from '../../constants/type.js'
 import { userService } from "./user.service.js";
@@ -116,4 +119,41 @@ const getAllUsers = errorWrapper(
   },
 );
 
-export { createUser, userLogin, getAllUsers };
+const getUserProfile = errorWrapper(
+  async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    const data = await userService.getUserProfile(
+      req.user?._id as string,
+      req.companyCode as string,
+    );
+
+    return responseUtils.success(res, {
+      data,
+      status: 200,
+    });
+  },
+);
+
+const updateUserProfile = errorWrapper(
+  async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    const data = await userService.updateProfile({
+      userId: req.user?._id as string,
+      companyId: req.companyCode as string,
+      userData: {
+        ...req.body,
+      },
+    });
+
+    return responseUtils.success(res, {
+      data,
+      status: 200,
+    });
+  },
+);
+
+export {
+  createUser,
+  userLogin,
+  getAllUsers,
+  getUserProfile,
+  updateUserProfile,
+};

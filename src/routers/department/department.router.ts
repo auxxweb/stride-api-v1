@@ -10,10 +10,10 @@ import {
 import { companyProtect } from "../../middleware/auth.middleware.js";
 
 const router = Router();
-router.post("/", companyProtect(), createDepartment);
-router.get("/", companyProtect(), getAllDepartments);
-router.get("/:id", companyProtect(), getDepartmentById);
-router.patch("/:id", companyProtect(), updateDepartment);
-router.delete("/:id", companyProtect(), deleteDepartment);
+router.post("/", await companyProtect(), createDepartment);
+router.get("/", await companyProtect(), getAllDepartments);
+router.get("/:id", await companyProtect(), getDepartmentById);
+router.patch("/:id", await companyProtect(), updateDepartment);
+router.delete("/:id", await companyProtect(), deleteDepartment);
 
 export default router;

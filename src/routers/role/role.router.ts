@@ -10,10 +10,10 @@ import {
 } from "../../modules/role/role.controller.js";
 
 const router = Router();
-router.post("/", companyProtect(), createRole);
-router.get("/", companyProtect(), getAllRoles);
-router.get("/:id", companyProtect(), getRoleById);
-router.patch("/:id", companyProtect(), updateRole);
-router.delete("/:id", companyProtect(), deleteRole);
+router.post("/", await companyProtect(), createRole);
+router.get("/", await companyProtect(), getAllRoles);
+router.get("/:id", await companyProtect(), getRoleById);
+router.patch("/:id", await companyProtect(), updateRole);
+router.delete("/:id", await companyProtect(), deleteRole);
 
 export default router;

@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 import bcrypt from "bcryptjs";
 import { generateAPIError } from "../../errors/apiError.js";
 import { CreateUser } from "./user.interface.js";
@@ -5,13 +6,19 @@ import { getUserCollection } from "./user.model.js";
 import { errorMessages } from "../../constants/messages.js";
 import Company from "../../modules/company/company.model.js";
 import {
+  checkStrideExist,
+  createStrideId,
   generateTempPassword,
   generateUserId,
   getCompanyIdFromEmployId,
 } from "./user.utils.js";
 import { generateToken, hashValue } from "../../utils/auth.utils.js";
+import { workHistoryService } from "../../modules/workHistory/workHistory.service.js";
+import { ObjectId } from "../../constants/type.js";
+import { getRoleCollection } from "../../modules/role/role.model.js";
+import { getDepartmentCollection } from "../../modules/department/department.model.js";
 
-const createUser = async ({
+export const createUser = async ({
   firstName,
   lastName,
   email,
@@ -26,66 +33,80 @@ const createUser = async ({
 }: CreateUser): Promise<any> => {
   const User = await getUserCollection(companyId);
 
+  // Check if the user already exists
   const userExist = await User.findOne({
     isDeleted: false,
     $or: [
-      {
-        email,
-      },
-      {
-        phoneNumber,
-      },
+      { email },
+      { phoneNumber: Number(phoneNumber) }, // Ensure consistent phoneNumber type
     ],
   });
 
-  if (userExist !== null) {
+  if (userExist) {
+    const conflictField = userExist.email === email ? email : phoneNumber;
     return await generateAPIError(
-      `${errorMessages.userExists} with ${
-        userExist?.email === email ? email : phoneNumber
-      }`,
+      `${errorMessages.userExists} with ${conflictField}`,
       400,
     );
   }
 
+  // Check if the company exists
   const company: any = await Company.findOne({
     companyId,
     isDeleted: false,
   });
 
-  if (company === null) {
+  if (!company) {
     return await generateAPIError(errorMessages.companyNotFound, 400);
   }
 
-  const employId = await generateUserId(company?.companyId, company?._id);
+  // Generate necessary IDs and passwords
+  const employId = await generateUserId(company.companyId);
   const tempPassword = await generateTempPassword();
   const hashedPassword = await hashValue(tempPassword, 10);
 
-  return await User.create({
+  let strideId;
+  const strideExists = await checkStrideExist({
+    email,
+    phoneNumber: Number(phoneNumber),
+  });
+
+  strideId = strideExists || (await createStrideId());
+
+  // Create the user
+  const user = await User.create({
     firstName,
     lastName,
     email,
-    phoneNumber,
-    ...(adhar !== null && {
-      adhar,
-    }),
-    ...(panCard !== null && {
-      panCard,
-    }),
-    ...(profileImage !== null && {
-      profileImage,
-    }),
-    departmentCollection: `department_${companyId}`,
+    phoneNumber: Number(phoneNumber), // Ensure phoneNumber is stored as a number
+    ...(adhar && { adhar }), // Check for both null and undefined
+    ...(panCard && { panCard }),
+    ...(profileImage && { profileImage }),
+    departmentCollection: `departments${companyId}`,
     departmentId,
-    roleCollection: `role_${companyId}`,
+    roleCollection: `roles${companyId}`,
     roleId,
-    ...(additionalDetails !== null && {
-      additionalDetails,
-    }),
-    companyId: company?._id,
+    ...(additionalDetails && { additionalDetails }),
+    companyId: company._id, // Ensure you're using the ObjectId version of companyId
+    strideId,
     tempPassword,
     employId,
     password: hashedPassword,
   });
+
+  try {
+    await workHistoryService.createWorkHistory({
+      strideId,
+      companyId: company._id,
+      startDate: new Date(),
+    });
+  } catch (error) {
+    await User.deleteOne({
+      _id: new ObjectId(user?._id),
+    });
+  }
+
+  return user;
 };
 
 const userLogin = async ({ employId, password }: any): Promise<any> => {
@@ -97,7 +118,7 @@ const userLogin = async ({ employId, password }: any): Promise<any> => {
   const userData = await User.findOne({
     employId,
     isDeleted: false,
-  }).populate("roleId");
+  });
 
   if (userData === null) {
     return await generateAPIError(errorMessages.userNotFound, 400);
@@ -120,7 +141,7 @@ const userLogin = async ({ employId, password }: any): Promise<any> => {
     phoneNumber: userData?.phoneNumber,
     adhar: userData?.adhar,
     panCard: userData?.panCard,
-    departmentId: userData?.department,
+    departmentId: userData?.departmentId,
     roleId: userData?.roleId,
     strideScore: userData?.strideScore,
     status: userData?.status,
@@ -141,20 +162,226 @@ const getAllUsers = async ({
   options,
   companyId,
 }: any): Promise<any> => {
-  // const companyId = await getCompanyIdFromEmployId(employId)
   const User = await getUserCollection(companyId);
-  const [data, totalCount] = await Promise.all([
-    await User.find(query, {}, options)
-      // .populate('industry')
-      .select("-password"),
-    await User.countDocuments(query),
+
+  const data = await User.aggregate([
+    {
+      $match: query,
+    },
+    {
+      $lookup: {
+        from: `roles${companyId}`,
+        localField: "roleId",
+        foreignField: "_id",
+        as: "roleId",
+      },
+    },
+    {
+      $unwind: {
+        path: "$roleId",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: `departments${companyId}`,
+        localField: "departmentId",
+        foreignField: "_id",
+        as: "departmentId",
+      },
+    },
+    {
+      $unwind: {
+        path: "$departmentId",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        firstName: 1,
+        lastName: 1,
+        email: 1,
+        employId: 1,
+        phoneNumber: 1,
+        adhar: 1,
+        panCard: 1,
+        profileImage: 1,
+        departmentId: 1,
+        roleId: 1,
+        strideScore: 1,
+        status: 1,
+        additionalDetails: 1,
+        strideId: 1,
+        companyId: 1,
+        isDeleted: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        __v: 1,
+      },
+    },
+    {
+      $sort: options?.sort,
+    },
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [{ $skip: options?.skip ?? 0 }, { $limit: options?.limit ?? 10 }],
+      },
+    },
+  ]);
+  // const companyId = await getCompanyIdFromEmployId(employId)
+
+  return {
+    data: data[0]?.data,
+    totalCount: data[0]?.metadata[0]?.total || 0,
+  };
+};
+
+const getUserProfile = async (
+  userId: string,
+  companyId: string,
+): Promise<any> => {
+  const User = await getUserCollection(companyId);
+
+  console.log(companyId, "company-----");
+
+  const data = await User.aggregate([
+    {
+      $match: {
+        isDeleted: false,
+        _id: new ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: `roles${companyId}`,
+        localField: "roleId",
+        foreignField: "_id",
+        as: "roleId",
+      },
+    },
+    {
+      $unwind: {
+        path: "$roleId",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: `departments${companyId}`,
+        localField: "departmentId",
+        foreignField: "_id",
+        as: "departmentId",
+      },
+    },
+    {
+      $unwind: {
+        path: "$departmentId",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        firstName: 1,
+        lastName: 1,
+        email: 1,
+        employId: 1,
+        phoneNumber: 1,
+        adhar: 1,
+        panCard: 1,
+        profileImage: 1,
+        departmentId: 1,
+        roleId: 1,
+        strideScore: 1,
+
+        status: 1,
+        additionalDetails: 1,
+        strideId: 1,
+        companyId: 1,
+        isDeleted: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        __v: 1,
+      },
+    },
   ]);
 
-  return { data, totalCount };
+  if (!data) {
+    return await generateAPIError(errorMessages.userNotFound, 400);
+  }
+
+  return data[0];
+};
+
+const updateProfile = async ({
+  userId,
+  companyId,
+  userData,
+}: any): Promise<any> => {
+  const { firstName, lastName, phoneNumber, adhar, panCard, profileImage } =
+    userData;
+  const User = await getUserCollection(companyId);
+
+  const user = await User.findOne({
+    _id: new ObjectId(userId),
+    isDeleted: false,
+  });
+
+  if (user === null) {
+    return await generateAPIError(errorMessages.userNotFound, 400);
+  }
+
+  const roleModel = await getRoleCollection(companyId);
+  const departmentModel = await getDepartmentCollection(companyId);
+
+  return await User.findOneAndUpdate(
+    {
+      _id: new ObjectId(userId),
+      isDeleted: false,
+    },
+    {
+      ...(firstName && {
+        firstName,
+      }),
+      ...(lastName && {
+        lastName,
+      }),
+      ...(phoneNumber && {
+        phoneNumber,
+      }),
+      ...(adhar && {
+        adhar,
+      }),
+      ...(panCard && {
+        panCard,
+      }),
+      ...(profileImage && {
+        profileImage,
+      }),
+    },
+    {
+      new: true,
+    },
+  )
+    .populate({
+      path: "roleId",
+      model: roleModel.modelName, // Use the modelName to explicitly provide the model
+    })
+    .populate({
+      path: "departmentId",
+      model: departmentModel.modelName, // Use the modelName to explicitly provide the model
+    })
+    .select(
+      "-password -tempPassword -resetId -roleCollection -departmentCollection",
+    );
 };
 
 export const userService = {
   createUser,
   userLogin,
   getAllUsers,
+  getUserProfile,
+  updateProfile,
 };

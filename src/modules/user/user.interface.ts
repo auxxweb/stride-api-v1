@@ -22,3 +22,8 @@ export interface UserLoginData {
   userId: string;
   password: string;
 }
+
+export interface StrideExistData {
+  email: string;
+  phoneNumber: number;
+}

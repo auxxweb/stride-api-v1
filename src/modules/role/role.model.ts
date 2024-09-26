@@ -1,5 +1,6 @@
-import { model, Model, Schema } from "mongoose";
+import mongoose from "mongoose";
 import { ObjectId } from "../../constants/type.js";
+const { model, models, Schema } = mongoose;
 
 const RoleSchema = new Schema(
   {
@@ -29,7 +30,14 @@ const RoleSchema = new Schema(
 
 export const getRoleCollection = async (
   companyId: string,
-): Promise<Model<any>> => {
-  const collectionName = `role_${companyId}`;
+): Promise<mongoose.Model<any>> => {
+  const collectionName = `roles${companyId}`;
+
+  // Check if model already exists in mongoose models
+  if (models[collectionName]) {
+    return models[collectionName]; // Return the existing model
+  }
+
+  // If not, create a new model
   return model(collectionName, RoleSchema, collectionName);
 };

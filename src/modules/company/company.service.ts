@@ -53,6 +53,7 @@ const createCompany = async ({
     }),
     ...(location !== null && {
       location: {
+        type: "Point",
         coordinates: [location?.lon, location?.lat],
       },
     }),

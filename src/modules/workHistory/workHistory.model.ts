@@ -1,4 +1,4 @@
-import { ObjectId } from "constants/type.js";
+import { ObjectId } from "../../constants/type.js";
 import { model, Schema } from "mongoose";
 
 const WorkHistorySchema = new Schema(

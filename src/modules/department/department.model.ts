@@ -1,5 +1,6 @@
+import mongoose from "mongoose";
 import { ObjectId } from "../../constants/type.js";
-import { Model, Schema, model } from "mongoose";
+const { model, models, Schema } = mongoose;
 
 const DepartmentSchema = new Schema(
   {
@@ -23,7 +24,10 @@ const DepartmentSchema = new Schema(
 
 export const getDepartmentCollection = async (
   companyId: string,
-): Promise<Model<any>> => {
-  const collectionName = `department_${companyId}`;
+): Promise<mongoose.Model<any>> => {
+  const collectionName = `departments${companyId}`;
+  if (models[collectionName]) {
+    return models[collectionName]; // Return the existing model
+  }
   return model(collectionName, DepartmentSchema, collectionName);
 };
