@@ -320,8 +320,16 @@ const updateProfile = async ({
   companyId,
   userData,
 }: any): Promise<any> => {
-  const { firstName, lastName, phoneNumber, adhar, panCard, profileImage } =
-    userData;
+  const {
+    firstName,
+    lastName,
+    phoneNumber,
+    adhar,
+    panCard,
+    profileImage,
+    password,
+    oldPassword,
+  } = userData;
   const User = await getUserCollection(companyId);
 
   const user = await User.findOne({
@@ -335,6 +343,21 @@ const updateProfile = async ({
 
   const roleModel = await getRoleCollection(companyId);
   const departmentModel = await getDepartmentCollection(companyId);
+  let hashedPassword;
+  if (password && oldPassword) {
+    const comparePassword = await bcrypt.compare(
+      oldPassword,
+      user?.password ?? "",
+    );
+    if (!comparePassword) {
+      return await generateAPIError(errorMessages.invalidOldPassword, 400);
+    }
+  }
+
+  if (password && oldPassword) {
+    hashedPassword = await hashValue(password ?? "", 10);
+    console.log(hashedPassword, "hashword");
+  }
 
   return await User.findOneAndUpdate(
     {
@@ -360,6 +383,104 @@ const updateProfile = async ({
       ...(profileImage && {
         profileImage,
       }),
+      ...(password &&
+        oldPassword && {
+          password: hashedPassword,
+        }),
+    },
+    {
+      new: true,
+    },
+  )
+    .populate({
+      path: "roleId",
+      model: roleModel.modelName, // Use the modelName to explicitly provide the model
+    })
+    .populate({
+      path: "departmentId",
+      model: departmentModel.modelName, // Use the modelName to explicitly provide the model
+    })
+    .select(
+      "-password -tempPassword -resetId -roleCollection -departmentCollection",
+    );
+};
+const updateUserByCompany = async ({
+  userId,
+  companyId,
+  userData,
+}: any): Promise<any> => {
+  const {
+    firstName,
+    lastName,
+    phoneNumber,
+    adhar,
+    panCard,
+    profileImage,
+    status,
+    departmentId,
+    roleId,
+    password,
+    email,
+  } = userData;
+  const User = await getUserCollection(companyId);
+
+  const user = await User.findOne({
+    _id: new ObjectId(userId),
+    isDeleted: false,
+  });
+
+  if (user === null) {
+    return await generateAPIError(errorMessages.userNotFound, 400);
+  }
+
+  const roleModel = await getRoleCollection(companyId);
+  const departmentModel = await getDepartmentCollection(companyId);
+
+  let hashedPassword;
+  if (password) {
+    hashedPassword = await hashValue(password ?? "", 10);
+    console.log(hashedPassword, "hashword");
+  }
+
+  return await User.findOneAndUpdate(
+    {
+      _id: new ObjectId(userId),
+      isDeleted: false,
+    },
+    {
+      ...(firstName && {
+        firstName,
+      }),
+      ...(lastName && {
+        lastName,
+      }),
+      ...(phoneNumber && {
+        phoneNumber,
+      }),
+      ...(adhar && {
+        adhar,
+      }),
+      ...(panCard && {
+        panCard,
+      }),
+      ...(profileImage && {
+        profileImage,
+      }),
+      ...(password && {
+        password: hashedPassword,
+      }),
+      ...(status && {
+        status,
+      }),
+      ...(departmentId && {
+        departmentId,
+      }),
+      ...(roleId && {
+        roleId,
+      }),
+      ...(email && {
+        email,
+      }),
     },
     {
       new: true,
@@ -384,4 +505,5 @@ export const userService = {
   getAllUsers,
   getUserProfile,
   updateProfile,
+  updateUserByCompany,
 };

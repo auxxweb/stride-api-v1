@@ -149,6 +149,22 @@ const updateUserProfile = errorWrapper(
     });
   },
 );
+const updateUserByCompany = errorWrapper(
+  async (req: RequestWithCompany, res: Response, next: NextFunction) => {
+    const data = await userService.updateUserByCompany({
+      userId: req.params?.id,
+      companyId: req.company?.companyId,
+      userData: {
+        ...req.body,
+      },
+    });
+
+    return responseUtils.success(res, {
+      data,
+      status: 200,
+    });
+  },
+);
 
 export {
   createUser,
@@ -156,4 +172,5 @@ export {
   getAllUsers,
   getUserProfile,
   updateUserProfile,
+  updateUserByCompany,
 };

@@ -157,5 +157,51 @@ export const companyProtect = async (): Promise<any> => {
     }
   };
 };
+// export const adminCompanyProtect = async (): Promise<any> => {
+//   return async (req: RequestWithCompany, res: Response, next: NextFunction) => {
+//     let token: any
+
+//     if (req.headers.authorization?.startsWith('Bearer') === true) {
+//       try {
+//         token = req.headers.authorization.split(' ')[1]
+//         let decoded: any = {}
+
+//         decoded = jwt.verify(token, appConfig.jwtSecret)
+//         console.log(decoded, 'decoded')
+
+//         if (decoded) {
+//           const user: any = await SuperAdmin.findOne({
+//             _id: new ObjectId(decoded?.id),
+//             isDeleted: false,
+//           }).select('-password')
+//           if (user === null) {
+//             const company: any = await Company.findOne({
+//               _id: new ObjectId(decoded?.id),
+//               isDeleted: false,
+//             }).select('-password -images')
+//             console.log(company, 'company')
+//             if (company === null) {
+//               res.status(401).send({ message: 'Unauthorized' })
+//             } else {
+//               req.company = company
+//               next()
+//             }
+//           } else {
+//             req.company = user
+//             next()
+//           }
+//         } else {
+//           res.status(401).send({ message: 'Unauthorized' })
+//         }
+//       } catch (error) {
+//         console.error(error)
+//         res.status(401).send({ message: 'Unauthorized' })
+//       }
+//     }
+//     if (!token) {
+//       res.status(401).send({ message: 'Unauthorized, No token' })
+//     }
+//   }
+// }
 
 // export const authMiddleware = { protect, optionalProtect };
