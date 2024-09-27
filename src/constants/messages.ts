@@ -30,6 +30,8 @@ const errorMessages = {
   workHistoryNotfound: "WorkHistory not found",
   userAccountBlocked:
     "Your account has been blocked, contact Admin for more details",
+  endDateNotValid: "endDate must be grater than startDate",
+  startDateNotValid: "startDate must be less than endDate",
 };
 
 const successMessages = {

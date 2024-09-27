@@ -17,6 +17,7 @@ import { workHistoryService } from "../../modules/workHistory/workHistory.servic
 import { ObjectId } from "../../constants/type.js";
 import { getRoleCollection } from "../../modules/role/role.model.js";
 import { getDepartmentCollection } from "../../modules/department/department.model.js";
+import WorkHistory from "../../modules/workHistory/workHistory.model.js";
 
 export const createUser = async ({
   firstName,
@@ -470,9 +471,10 @@ const updateUserByCompany = async ({
       ...(profileImage && {
         profileImage,
       }),
-      ...(password && {
-        password: hashedPassword,
-      }),
+      ...(password &&
+        hashedPassword && {
+          password: hashedPassword,
+        }),
       ...(status !== null && {
         status,
       }),
@@ -551,6 +553,44 @@ const updateUserByAdmin = async ({
     );
 };
 
+const getUserByStrideId = async (strideId: string): Promise<any> => {
+  const userExist = await WorkHistory.findOne({
+    strideId,
+    isDeleted: false,
+  });
+
+  if (userExist === null) {
+    return await generateAPIError(errorMessages.userNotFound, 400);
+  }
+  // const data = WorkHistory.aggregate([
+  //   {
+  //     $match: {
+  //       strideId,
+  //       isDeleted: false,
+  //     },
+  //   },
+  // ])
+};
+
+const findUserStrideScore = async ({
+  userId,
+  companyId,
+}: {
+  userId: string;
+  companyId: string;
+}): Promise<any> => {
+  const User = await getUserCollection(companyId);
+
+  const data = await User.findOne({
+    _id: new ObjectId(userId),
+    isDeleted: false,
+  }).select("strideScore _id");
+
+  if (!data) {
+    return await generateAPIError(errorMessages.userNotFound, 400);
+  }
+};
+
 export const userService = {
   createUser,
   userLogin,
@@ -559,4 +599,6 @@ export const userService = {
   updateProfile,
   updateUserByCompany,
   updateUserByAdmin,
+  getUserByStrideId,
+  findUserStrideScore,
 };

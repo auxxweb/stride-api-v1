@@ -37,7 +37,12 @@ const getAllWorkHistoryByCompany = errorWrapper(
     }
 
     const data = await workHistoryService.getAllWorkHistories({
-      query,
+      query: {
+        ...query,
+        ...(req.query?.strideId && {
+          strideId: req.query?.strideId,
+        }),
+      },
       options: {
         ...paginationOptions,
         sort: { createdAt: -1 },
@@ -111,9 +116,13 @@ const getWorkHistoryById = errorWrapper(
 
 const updateHistory = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
-    const data = await workHistoryService.updateWorkHistory(req.params?.id, {
-      ...req.body,
-      companyId: req?.company?._id,
+    const data = await workHistoryService.updateWorkHistory({
+      workHistoryData: {
+        ...req.body,
+      },
+      userId: req?.params?.id,
+      companyCode: req.company?.companyId as string,
+      companyId: req.company?._id as string,
     });
 
     return responseUtils.success(res, {
