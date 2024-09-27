@@ -93,6 +93,10 @@ const companyLogin = async ({
     return await generateAPIError(errorMessages.inValidEmail, 400);
   }
 
+  if (!company?.status) {
+    return await generateAPIError(errorMessages.userAccountBlocked, 400);
+  }
+
   const comparePassword = await bcrypt.compare(
     password,
     company?.password ?? "",

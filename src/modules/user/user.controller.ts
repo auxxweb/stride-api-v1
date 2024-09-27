@@ -1,4 +1,4 @@
-import { NextFunction, Response } from "express";
+import { NextFunction, Response, Request } from "express";
 // import { FilterQuery } from 'mongoose'
 
 import { errorWrapper } from "../../middleware/errorWrapper.js";
@@ -13,6 +13,7 @@ import { userService } from "./user.service.js";
 import { FilterQuery } from "mongoose";
 import { getPaginationOptions } from "../../utils/pagination.utils.js";
 import { ObjectId } from "../../constants/type.js";
+import { getCompanyIdFromEmployId } from "./user.utils.js";
 
 const createUser = errorWrapper(
   async (req: RequestWithCompany, res: Response, next: NextFunction) => {
@@ -165,6 +166,24 @@ const updateUserByCompany = errorWrapper(
     });
   },
 );
+const updateUserByAdmin = errorWrapper(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const companyId = await getCompanyIdFromEmployId(req.params?.id);
+
+    const data = await userService.updateUserByAdmin({
+      userId: req.params?.id,
+      companyId,
+      userData: {
+        ...req.body,
+      },
+    });
+
+    return responseUtils.success(res, {
+      data,
+      status: 200,
+    });
+  },
+);
 
 export {
   createUser,
@@ -173,4 +192,5 @@ export {
   getUserProfile,
   updateUserProfile,
   updateUserByCompany,
+  updateUserByAdmin,
 };

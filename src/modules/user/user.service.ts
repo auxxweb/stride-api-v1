@@ -124,6 +124,10 @@ const userLogin = async ({ employId, password }: any): Promise<any> => {
     return await generateAPIError(errorMessages.userNotFound, 400);
   }
 
+  if (userData?.status === false) {
+    return await generateAPIError(errorMessages.userAccountBlocked, 400);
+  }
+
   const comparePassword = await bcrypt.compare(
     password,
     userData?.password ?? "",
@@ -469,7 +473,7 @@ const updateUserByCompany = async ({
       ...(password && {
         password: hashedPassword,
       }),
-      ...(status && {
+      ...(status !== null && {
         status,
       }),
       ...(departmentId && {
@@ -499,6 +503,54 @@ const updateUserByCompany = async ({
     );
 };
 
+const updateUserByAdmin = async ({
+  userId,
+  companyId,
+  userData,
+}: any): Promise<any> => {
+  const { status } = userData;
+  const User = await getUserCollection(companyId);
+
+  const user = await User.findOne({
+    employId: userId,
+    isDeleted: false,
+  });
+
+  if (user === null) {
+    return await generateAPIError(errorMessages.userNotFound, 400);
+  }
+
+  const roleModel = await getRoleCollection(companyId);
+  const departmentModel = await getDepartmentCollection(companyId);
+
+  console.log(user, "statys");
+
+  return await User.findOneAndUpdate(
+    {
+      employId: userId,
+    },
+    {
+      ...(status !== null && {
+        status,
+      }),
+    },
+    {
+      new: true,
+    },
+  )
+    .populate({
+      path: "roleId",
+      model: roleModel.modelName, // Use the modelName to explicitly provide the model
+    })
+    .populate({
+      path: "departmentId",
+      model: departmentModel.modelName, // Use the modelName to explicitly provide the model
+    })
+    .select(
+      "-password -tempPassword -resetId -roleCollection -departmentCollection",
+    );
+};
+
 export const userService = {
   createUser,
   userLogin,
@@ -506,4 +558,5 @@ export const userService = {
   getUserProfile,
   updateProfile,
   updateUserByCompany,
+  updateUserByAdmin,
 };

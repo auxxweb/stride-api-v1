@@ -48,6 +48,10 @@ const CompanySchema = new Schema(
     phoneNumber: {
       type: Number, // Consider using String for better phone number flexibility
     },
+    status: {
+      type: Boolean,
+      default: true,
+    },
     companyId: {
       type: String,
       required: true,

@@ -1,6 +1,4 @@
 const errorMessages = {
-  userAccountBlocked:
-    "Your account has been blocked, contact Admin for more details",
   unauthorized: "You are unauthorized to access this platform",
   invalidCredentials: "Invalid password",
   emailSendFailed: "Email send failed",
@@ -30,6 +28,8 @@ const errorMessages = {
   invalidOldPassword: "Invalid old password",
   workHistoryExists: "Employ Work history already exists",
   workHistoryNotfound: "WorkHistory not found",
+  userAccountBlocked:
+    "Your account has been blocked, contact Admin for more details",
 };
 
 const successMessages = {
