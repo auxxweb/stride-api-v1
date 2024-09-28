@@ -589,6 +589,8 @@ const findUserStrideScore = async ({
   if (!data) {
     return await generateAPIError(errorMessages.userNotFound, 400);
   }
+
+  return data;
 };
 
 export const userService = {

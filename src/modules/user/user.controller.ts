@@ -185,6 +185,20 @@ const updateUserByAdmin = errorWrapper(
   },
 );
 
+const findUserStrideScore = errorWrapper(
+  async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    const data = await userService.findUserStrideScore({
+      userId: req.user?._id as string,
+      companyId: req.companyCode as string,
+    });
+
+    return responseUtils.success(res, {
+      data,
+      status: 200,
+    });
+  },
+);
+
 export {
   createUser,
   userLogin,
@@ -193,4 +207,5 @@ export {
   updateUserProfile,
   updateUserByCompany,
   updateUserByAdmin,
+  findUserStrideScore,
 };

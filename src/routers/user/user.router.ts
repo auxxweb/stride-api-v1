@@ -7,6 +7,7 @@ import {
 } from "../../middleware/auth.middleware.js";
 import {
   createUser,
+  findUserStrideScore,
   getAllUsers,
   getUserProfile,
   updateUserByAdmin,
@@ -17,6 +18,7 @@ import {
 
 const router = Router();
 router.post("/", await companyProtect(), createUser);
+router.get("/stride-score", await userProtect(), findUserStrideScore);
 router.post("/login", userLogin);
 router.get("/", await companyProtect(), getAllUsers);
 router.get("/profile", await userProtect(), getUserProfile);
