@@ -32,6 +32,7 @@ const errorMessages = {
     "Your account has been blocked, contact Admin for more details",
   endDateNotValid: "endDate must be grater than startDate",
   startDateNotValid: "startDate must be less than endDate",
+  attendanceNotExists: "You are not logged in today",
 };
 
 const successMessages = {

@@ -114,8 +114,6 @@ const userLogin = async ({ employId, password }: any): Promise<any> => {
   const companyId = await getCompanyIdFromEmployId(employId);
   const User = await getUserCollection(companyId);
 
-  console.log(employId, "employId", companyId, "companyId", password);
-
   const userData = await User.findOne({
     employId,
     isDeleted: false,
