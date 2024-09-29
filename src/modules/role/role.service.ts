@@ -25,7 +25,7 @@ const createRole = async ({
     name,
     companyId: companyObjectId,
     departmentId,
-    departmentCollection: `rols${companyId}`,
+    departmentCollection: `departments${companyId}`,
   });
 };
 

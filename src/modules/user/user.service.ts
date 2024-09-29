@@ -121,11 +121,22 @@ export const createUser = async ({
 const userLogin = async ({ employId, password }: any): Promise<any> => {
   const companyId = await getCompanyIdFromEmployId(employId);
   const User = await getUserCollection(companyId);
+  const roleModel = await getRoleCollection(companyId);
+  const departmentModel = await getDepartmentCollection(companyId);
 
   const userData = await User.findOne({
     employId,
     isDeleted: false,
-  });
+  })
+    .populate({
+      path: "roleId",
+      model: roleModel.modelName, // Use the modelName to explicitly provide the model
+    })
+    .populate({
+      path: "departmentId",
+      model: departmentModel.modelName, // Use the modelName to explicitly provide the model
+    })
+    .select(" -tempPassword -resetId -roleCollection -departmentCollection");
 
   if (userData === null) {
     return await generateAPIError(errorMessages.userNotFound, 400);
