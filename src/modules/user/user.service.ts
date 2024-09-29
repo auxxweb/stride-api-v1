@@ -31,6 +31,10 @@ export const createUser = async ({
   roleId,
   additionalDetails,
   companyId,
+  address,
+  emergencyNumber,
+  countryCode,
+  gender,
 }: CreateUser): Promise<any> => {
   const User = await getUserCollection(companyId);
 
@@ -83,6 +87,10 @@ export const createUser = async ({
     ...(adhar && { adhar }), // Check for both null and undefined
     ...(panCard && { panCard }),
     ...(profileImage && { profileImage }),
+    ...(address && { address }),
+    ...(emergencyNumber && { emergencyNumber }),
+    gender,
+    countryCode,
     departmentCollection: `departments${companyId}`,
     departmentId,
     roleCollection: `roles${companyId}`,
@@ -137,6 +145,7 @@ const userLogin = async ({ employId, password }: any): Promise<any> => {
   }
 
   return {
+    _id: userData?._id,
     firstName: userData?.firstName,
     lastName: userData?.lastName,
     email: userData?.email,
@@ -153,6 +162,10 @@ const userLogin = async ({ employId, password }: any): Promise<any> => {
     isDeleted: userData?.isDeleted,
     createdAt: userData?.createdAt,
     updatedAt: userData?.updatedAt,
+    emergencyNumber: userData?.emergencyNumber,
+    countryCode: userData?.countryCode,
+    address: userData?.countryCode,
+    gender: userData?.gender,
     token: await generateToken({
       id: String(userData?._id),
       companyId,
@@ -207,6 +220,10 @@ const getAllUsers = async ({
         email: 1,
         employId: 1,
         phoneNumber: 1,
+        countryCode: 1,
+        gender: 1,
+        address: 1,
+        emergencyNumber: 1,
         adhar: 1,
         panCard: 1,
         profileImage: 1,
@@ -298,7 +315,10 @@ const getUserProfile = async (
         departmentId: 1,
         roleId: 1,
         strideScore: 1,
-
+        countryCode: 1,
+        gender: 1,
+        address: 1,
+        emergencyNumber: 1,
         status: 1,
         additionalDetails: 1,
         strideId: 1,
@@ -547,7 +567,7 @@ const updateUserByAdmin = async ({
       model: departmentModel.modelName, // Use the modelName to explicitly provide the model
     })
     .select(
-      "-password -tempPassword -resetId -roleCollection -departmentCollection",
+      "firstName lastName departmentId roleId status profileImage companyId gender emergencyNumber",
     );
 };
 
