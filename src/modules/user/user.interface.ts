@@ -16,6 +16,10 @@ export interface CreateUser {
   roleId: string;
   additionalDetails: string;
   companyId: string;
+  countryCode: string;
+  gender: string;
+  address: string;
+  emergencyNumber: number;
 }
 
 export interface UserLoginData {

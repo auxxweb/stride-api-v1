@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
 import mongoose from "mongoose";
 import { ObjectId } from "../../constants/type.js";
+import { UserGenderEnum } from "./user.enums.js";
 const { model, Schema } = mongoose;
 
 const UserSchema = new Schema(
@@ -17,6 +18,17 @@ const UserSchema = new Schema(
       trim: true,
       set: (value: string) => value.toLowerCase(),
     },
+    gender: {
+      type: String,
+      enum: UserGenderEnum,
+      required: true,
+    },
+    address: {
+      type: String,
+    },
+    emergencyNumber: {
+      type: Number,
+    },
     employId: {
       type: String,
       required: true,
@@ -25,6 +37,9 @@ const UserSchema = new Schema(
       type: String,
       sparse: true,
       trim: true,
+    },
+    countryCode: {
+      type: String,
     },
     tempPassword: {
       type: String,
