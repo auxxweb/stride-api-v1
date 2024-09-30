@@ -19,7 +19,8 @@ const markAttendance = async ({
   const UserModel = await getUserCollection(companyId);
 
   // Ensure 'date' is a valid Date object
-  const actualDate = new Date(date);
+  const actualDate =
+    date !== null || date !== undefined ? new Date(date) : new Date();
 
   const startOfDay = new Date(actualDate.setHours(0, 0, 0, 0));
   const endOfDay = new Date(actualDate.setHours(23, 59, 59, 999));
@@ -109,7 +110,7 @@ const markAttendance = async ({
                 type: "Point",
                 coordinates: [logOut.location.lon, logOut.location.lat],
               },
-              time: new Date(logOut.time),
+              time: new Date(logOut.time) ?? new Date(),
             },
             ...(breakData && { breakData: updatedBreakData }),
             ...(additionalDetails && { additionalDetails }),
@@ -190,7 +191,7 @@ const markAttendance = async ({
           type: "Point",
           coordinates: [login.location.lon, login.location.lat],
         },
-        time: new Date(login.time),
+        time: new Date(login.time) ?? new Date(),
       },
       companyId,
       ...(additionalDetails && { additionalDetails }),
@@ -201,6 +202,113 @@ const markAttendance = async ({
   console.log("hello how are you");
 };
 
+const getUserAttendance = async ({
+  companyId,
+  userId,
+  date,
+}: {
+  companyId: string;
+  userId: string;
+  date: Date;
+}): Promise<any> => {
+  // Ensure 'date' is a valid Date object
+  const actualDate = new Date(date ?? new Date());
+
+  const startOfDay = new Date(actualDate.setHours(0, 0, 0, 0));
+  const endOfDay = new Date(actualDate.setHours(23, 59, 59, 999));
+  const Attendance = await getAttendanceCollection(companyId);
+  // const UserModel = await getUserCollection(companyId)
+
+  const data = await Attendance.aggregate([
+    {
+      $match: {
+        userId: new ObjectId(userId),
+        date: {
+          $gte: startOfDay,
+          $lt: endOfDay,
+        },
+        isDeleted: false,
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        userId: 1,
+        date: 1,
+        login: 1,
+        logOut: 1,
+        breakData: 1,
+        loginKey: {
+          $cond: {
+            if: {
+              $and: [
+                { $gt: ["$login.time", null] }, // login.time exists
+                { $not: [{ $gt: ["$logOut.time", null] }] }, // logOut.time does not exist
+              ],
+            },
+            then: "loggedIn",
+            else: {
+              $cond: {
+                if: {
+                  $and: [
+                    { $gt: ["$login.time", null] }, // login.time exists
+                    { $gt: ["$logOut.time", null] }, // logOut.time exists
+                  ],
+                },
+                then: "loggedOut",
+                else: null, // Optional: can set a default value if neither condition is met
+              },
+            },
+          },
+        },
+        breakStatus: {
+          $cond: {
+            if: { $gt: [{ $size: "$breakData" }, 0] },
+            then: {
+              $let: {
+                vars: {
+                  lastBreak: { $arrayElemAt: ["$breakData", -1] },
+                },
+                in: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        { $eq: ["$$lastBreak.breakIn", null] },
+                        { $eq: ["$$lastBreak.breakOut", null] },
+                      ],
+                    },
+                    then: "NA",
+                    else: {
+                      $cond: {
+                        if: {
+                          $and: [
+                            { $ne: ["$$lastBreak.breakIn", null] },
+                            { $not: [{ $gt: ["$$lastBreak.breakOut", null] }] },
+                          ],
+                        },
+                        then: "breakIn",
+                        else: "breakOut",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            else: "NA", // If breakData array is empty, default to "NA"
+          },
+        },
+        isDeleted: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        __v: 1,
+      },
+    },
+  ]);
+
+  return data[0] ?? {};
+};
+
 export const attendanceService = {
   markAttendance,
+  getUserAttendance,
 };
