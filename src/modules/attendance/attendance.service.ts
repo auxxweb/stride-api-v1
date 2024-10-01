@@ -95,7 +95,32 @@ const markAttendance = async ({
 
       // Ensure valid logOut coordinates before updating
       if (logOut?.location?.lon && logOut?.location?.lat) {
-        return await Attendance.findOneAndUpdate(
+        // return await Attendance.findOneAndUpdate(
+        //   {
+        //     userId: new ObjectId(userId),
+        //     date: {
+        //       $gte: startOfDay,
+        //       $lt: endOfDay,
+        //     },
+        //     isDeleted: false,
+        //   },
+        //   {
+        //     logOut: {
+        //       location: {
+        //         type: "Point",
+        //         coordinates: [logOut.location.lon, logOut.location.lat],
+        //       },
+        //       time: new Date(logOut.time) ?? new Date(),
+        //     },
+        //     ...(breakData && { breakData: updatedBreakData }),
+        //     ...(additionalDetails && { additionalDetails }),
+        //   },
+        //   {
+        //     new: true,
+        //   },
+        // );
+        // Step 1: Perform the update
+        const updatedAttendance = await Attendance.findOneAndUpdate(
           {
             userId: new ObjectId(userId),
             date: {
@@ -116,9 +141,42 @@ const markAttendance = async ({
             ...(additionalDetails && { additionalDetails }),
           },
           {
-            new: true,
+            new: true, // return the updated document
           },
         );
+
+        // Step 2: Compute loginKey based on login and logOut times
+        const loginKey =
+          updatedAttendance.login?.time && !updatedAttendance.logOut?.time
+            ? "loggedIn"
+            : updatedAttendance.login?.time && updatedAttendance.logOut?.time
+            ? "loggedOut"
+            : null; // set default value if neither condition is met
+
+        // Step 3: Compute breakStatus based on breakData
+        let breakStatus = "NA"; // default value if breakData is empty
+        if (updatedAttendance.breakData?.length > 0) {
+          const lastBreak =
+            updatedAttendance.breakData[updatedAttendance.breakData.length - 1];
+
+          if (lastBreak.breakIn === null && lastBreak.breakOut === null) {
+            breakStatus = "NA";
+          } else if (
+            lastBreak.breakIn !== null &&
+            lastBreak.breakOut === null
+          ) {
+            breakStatus = "breakIn";
+          } else {
+            breakStatus = "breakOut";
+          }
+        }
+
+        // Return the updated document with loginKey and breakStatus
+        return {
+          ...updatedAttendance.toObject(),
+          loginKey,
+          breakStatus,
+        };
       } else {
         return await generateAPIError("Invalid logOut location", 400);
       }
@@ -157,7 +215,7 @@ const markAttendance = async ({
         });
       }
 
-      return await Attendance.findOneAndUpdate(
+      const updatedAttendance = await Attendance.findOneAndUpdate(
         {
           userId: new ObjectId(userId),
           date: {
@@ -174,6 +232,35 @@ const markAttendance = async ({
           new: true,
         },
       );
+
+      const loginKey =
+        updatedAttendance.login?.time && !updatedAttendance.logOut?.time
+          ? "loggedIn"
+          : updatedAttendance.login?.time && updatedAttendance.logOut?.time
+          ? "loggedOut"
+          : null; // set default value if neither condition is met
+
+      // Step 3: Compute breakStatus based on breakData
+      let breakStatus = "NA"; // default value if breakData is empty
+      if (updatedAttendance.breakData?.length > 0) {
+        const lastBreak =
+          updatedAttendance.breakData[updatedAttendance.breakData.length - 1];
+
+        if (lastBreak.breakIn === null && lastBreak.breakOut === null) {
+          breakStatus = "NA";
+        } else if (lastBreak.breakIn !== null && lastBreak.breakOut === null) {
+          breakStatus = "breakIn";
+        } else {
+          breakStatus = "breakOut";
+        }
+      }
+
+      // Return the updated document with loginKey and breakStatus
+      return {
+        ...updatedAttendance.toObject(),
+        loginKey,
+        breakStatus,
+      };
     }
   } else {
     // Ensure valid login coordinates when creating new attendance
@@ -197,7 +284,36 @@ const markAttendance = async ({
       ...(additionalDetails && { additionalDetails }),
     };
 
-    return await Attendance.create(newAttendance);
+    const updatedAttendance = await Attendance.create(newAttendance);
+
+    const loginKey =
+      updatedAttendance.login?.time && !updatedAttendance.logOut?.time
+        ? "loggedIn"
+        : updatedAttendance.login?.time && updatedAttendance.logOut?.time
+        ? "loggedOut"
+        : null; // set default value if neither condition is met
+
+    // Step 3: Compute breakStatus based on breakData
+    let breakStatus = "NA"; // default value if breakData is empty
+    if (updatedAttendance.breakData?.length > 0) {
+      const lastBreak =
+        updatedAttendance.breakData[updatedAttendance.breakData.length - 1];
+
+      if (lastBreak.breakIn === null && lastBreak.breakOut === null) {
+        breakStatus = "NA";
+      } else if (lastBreak.breakIn !== null && lastBreak.breakOut === null) {
+        breakStatus = "breakIn";
+      } else {
+        breakStatus = "breakOut";
+      }
+    }
+
+    // Return the updated document with loginKey and breakStatus
+    return {
+      ...updatedAttendance.toObject(),
+      loginKey,
+      breakStatus,
+    };
   }
   console.log("hello how are you");
 };
