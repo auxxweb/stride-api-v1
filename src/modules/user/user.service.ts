@@ -1,23 +1,25 @@
 /* eslint-disable prefer-const */
-import bcrypt from "bcryptjs";
-import { generateAPIError } from "../../errors/apiError.js";
-import { CreateUser } from "./user.interface.js";
-import { getUserCollection } from "./user.model.js";
-import { errorMessages } from "../../constants/messages.js";
-import Company from "../../modules/company/company.model.js";
+import bcrypt from 'bcryptjs'
+import { generateAPIError } from '../../errors/apiError.js'
+import { CreateUser } from './user.interface.js'
+import { getUserCollection } from './user.model.js'
+import { errorMessages } from '../../constants/messages.js'
+import Company from '../../modules/company/company.model.js'
 import {
   checkStrideExist,
   createStrideId,
   generateTempPassword,
   generateUserId,
   getCompanyIdFromEmployId,
-} from "./user.utils.js";
-import { generateToken, hashValue } from "../../utils/auth.utils.js";
-import { workHistoryService } from "../../modules/workHistory/workHistory.service.js";
-import { ObjectId } from "../../constants/type.js";
-import { getRoleCollection } from "../../modules/role/role.model.js";
-import { getDepartmentCollection } from "../../modules/department/department.model.js";
-import WorkHistory from "../../modules/workHistory/workHistory.model.js";
+} from './user.utils.js'
+import { generateToken, hashValue } from '../../utils/auth.utils.js'
+import { workHistoryService } from '../../modules/workHistory/workHistory.service.js'
+import { ObjectId } from '../../constants/type.js'
+import { getRoleCollection } from '../../modules/role/role.model.js'
+import { getDepartmentCollection } from '../../modules/department/department.model.js'
+import WorkHistory from '../../modules/workHistory/workHistory.model.js'
+import { deleteS3 } from '../../controller/s3.controller.js'
+// import { deleteS3 } from "../../controller/s3.controller.js";
 
 export const createUser = async ({
   firstName,
@@ -36,7 +38,7 @@ export const createUser = async ({
   countryCode,
   gender,
 }: CreateUser): Promise<any> => {
-  const User = await getUserCollection(companyId);
+  const User = await getUserCollection(companyId)
 
   // Check if the user already exists
   const userExist = await User.findOne({
@@ -45,38 +47,38 @@ export const createUser = async ({
       { email },
       { phoneNumber: Number(phoneNumber) }, // Ensure consistent phoneNumber type
     ],
-  });
+  })
 
   if (userExist) {
-    const conflictField = userExist.email === email ? email : phoneNumber;
+    const conflictField = userExist.email === email ? email : phoneNumber
     return await generateAPIError(
       `${errorMessages.userExists} with ${conflictField}`,
       400,
-    );
+    )
   }
 
   // Check if the company exists
   const company: any = await Company.findOne({
     companyId,
     isDeleted: false,
-  });
+  })
 
   if (!company) {
-    return await generateAPIError(errorMessages.companyNotFound, 400);
+    return await generateAPIError(errorMessages.companyNotFound, 400)
   }
 
   // Generate necessary IDs and passwords
-  const employId = await generateUserId(company.companyId);
-  const tempPassword = await generateTempPassword();
-  const hashedPassword = await hashValue(tempPassword, 10);
+  const employId = await generateUserId(company.companyId)
+  const tempPassword = await generateTempPassword()
+  const hashedPassword = await hashValue(tempPassword, 10)
 
-  let strideId;
+  let strideId
   const strideExists = await checkStrideExist({
     email,
     phoneNumber: Number(phoneNumber),
-  });
+  })
 
-  strideId = strideExists || (await createStrideId());
+  strideId = strideExists || (await createStrideId())
 
   // Create the user
   const user = await User.create({
@@ -101,58 +103,58 @@ export const createUser = async ({
     tempPassword,
     employId,
     password: hashedPassword,
-  });
+  })
 
   try {
     await workHistoryService.createWorkHistory({
       strideId,
       companyId: company._id,
       startDate: new Date(),
-    });
+    })
   } catch (error) {
     await User.deleteOne({
       _id: new ObjectId(user?._id),
-    });
+    })
   }
 
-  return user;
-};
+  return user
+}
 
 const userLogin = async ({ employId, password }: any): Promise<any> => {
-  const companyId = await getCompanyIdFromEmployId(employId);
-  const User = await getUserCollection(companyId);
-  const roleModel = await getRoleCollection(companyId);
-  const departmentModel = await getDepartmentCollection(companyId);
+  const companyId = await getCompanyIdFromEmployId(employId)
+  const User = await getUserCollection(companyId)
+  const roleModel = await getRoleCollection(companyId)
+  const departmentModel = await getDepartmentCollection(companyId)
 
   const userData = await User.findOne({
     employId,
     isDeleted: false,
   })
     .populate({
-      path: "roleId",
+      path: 'roleId',
       model: roleModel.modelName, // Use the modelName to explicitly provide the model
     })
     .populate({
-      path: "departmentId",
+      path: 'departmentId',
       model: departmentModel.modelName, // Use the modelName to explicitly provide the model
     })
-    .select(" -tempPassword -resetId -roleCollection -departmentCollection");
+    .select(' -tempPassword -resetId -roleCollection -departmentCollection')
 
   if (userData === null) {
-    return await generateAPIError(errorMessages.userNotFound, 400);
+    return await generateAPIError(errorMessages.userNotFound, 400)
   }
 
   if (userData?.status === false) {
-    return await generateAPIError(errorMessages.userAccountBlocked, 400);
+    return await generateAPIError(errorMessages.userAccountBlocked, 400)
   }
 
   const comparePassword = await bcrypt.compare(
     password,
-    userData?.password ?? "",
-  );
+    userData?.password ?? '',
+  )
 
   if (!comparePassword) {
-    return await generateAPIError(errorMessages.invalidPassword, 400);
+    return await generateAPIError(errorMessages.invalidPassword, 400)
   }
 
   return {
@@ -166,6 +168,7 @@ const userLogin = async ({ employId, password }: any): Promise<any> => {
     panCard: userData?.panCard,
     departmentId: userData?.departmentId,
     roleId: userData?.roleId,
+    profileImage: userData?.profileImage,
     strideScore: userData?.strideScore,
     status: userData?.status,
     additionalDetails: userData?.additionalDetails,
@@ -181,15 +184,15 @@ const userLogin = async ({ employId, password }: any): Promise<any> => {
       id: String(userData?._id),
       companyId,
     }),
-  };
-};
+  }
+}
 
 const getAllUsers = async ({
   query = {},
   options,
   companyId,
 }: any): Promise<any> => {
-  const User = await getUserCollection(companyId);
+  const User = await getUserCollection(companyId)
 
   const data = await User.aggregate([
     {
@@ -198,28 +201,28 @@ const getAllUsers = async ({
     {
       $lookup: {
         from: `roles${companyId}`,
-        localField: "roleId",
-        foreignField: "_id",
-        as: "roleId",
+        localField: 'roleId',
+        foreignField: '_id',
+        as: 'roleId',
       },
     },
     {
       $unwind: {
-        path: "$roleId",
+        path: '$roleId',
         preserveNullAndEmptyArrays: true,
       },
     },
     {
       $lookup: {
         from: `departments${companyId}`,
-        localField: "departmentId",
-        foreignField: "_id",
-        as: "departmentId",
+        localField: 'departmentId',
+        foreignField: '_id',
+        as: 'departmentId',
       },
     },
     {
       $unwind: {
-        path: "$departmentId",
+        path: '$departmentId',
         preserveNullAndEmptyArrays: true,
       },
     },
@@ -256,26 +259,26 @@ const getAllUsers = async ({
     },
     {
       $facet: {
-        metadata: [{ $count: "total" }],
+        metadata: [{ $count: 'total' }],
         data: [{ $skip: options?.skip ?? 0 }, { $limit: options?.limit ?? 10 }],
       },
     },
-  ]);
+  ])
   // const companyId = await getCompanyIdFromEmployId(employId)
 
   return {
     data: data[0]?.data,
     totalCount: data[0]?.metadata[0]?.total || 0,
-  };
-};
+  }
+}
 
 const getUserProfile = async (
   userId: string,
   companyId: string,
 ): Promise<any> => {
-  const User = await getUserCollection(companyId);
+  const User = await getUserCollection(companyId)
 
-  console.log(companyId, "company-----");
+  console.log(companyId, 'company-----')
 
   const data = await User.aggregate([
     {
@@ -287,28 +290,28 @@ const getUserProfile = async (
     {
       $lookup: {
         from: `roles${companyId}`,
-        localField: "roleId",
-        foreignField: "_id",
-        as: "roleId",
+        localField: 'roleId',
+        foreignField: '_id',
+        as: 'roleId',
       },
     },
     {
       $unwind: {
-        path: "$roleId",
+        path: '$roleId',
         preserveNullAndEmptyArrays: true,
       },
     },
     {
       $lookup: {
         from: `departments${companyId}`,
-        localField: "departmentId",
-        foreignField: "_id",
-        as: "departmentId",
+        localField: 'departmentId',
+        foreignField: '_id',
+        as: 'departmentId',
       },
     },
     {
       $unwind: {
-        path: "$departmentId",
+        path: '$departmentId',
         preserveNullAndEmptyArrays: true,
       },
     },
@@ -340,14 +343,14 @@ const getUserProfile = async (
         __v: 1,
       },
     },
-  ]);
+  ])
 
   if (!data) {
-    return await generateAPIError(errorMessages.userNotFound, 400);
+    return await generateAPIError(errorMessages.userNotFound, 400)
   }
 
-  return data[0];
-};
+  return data[0]
+}
 
 const updateProfile = async ({
   userId,
@@ -363,37 +366,37 @@ const updateProfile = async ({
     profileImage,
     password,
     oldPassword,
-  } = userData;
-  const User = await getUserCollection(companyId);
+  } = userData
+  const User = await getUserCollection(companyId)
 
   const user = await User.findOne({
     _id: new ObjectId(userId),
     isDeleted: false,
-  });
+  })
 
   if (user === null) {
-    return await generateAPIError(errorMessages.userNotFound, 400);
+    return await generateAPIError(errorMessages.userNotFound, 400)
   }
 
-  const roleModel = await getRoleCollection(companyId);
-  const departmentModel = await getDepartmentCollection(companyId);
-  let hashedPassword;
+  const roleModel = await getRoleCollection(companyId)
+  const departmentModel = await getDepartmentCollection(companyId)
+  let hashedPassword
   if (password && oldPassword) {
     const comparePassword = await bcrypt.compare(
       oldPassword,
-      user?.password ?? "",
-    );
+      user?.password ?? '',
+    )
     if (!comparePassword) {
-      return await generateAPIError(errorMessages.invalidOldPassword, 400);
+      return await generateAPIError(errorMessages.invalidOldPassword, 400)
     }
   }
 
   if (password && oldPassword) {
-    hashedPassword = await hashValue(password ?? "", 10);
-    console.log(hashedPassword, "hashword");
+    hashedPassword = await hashValue(password ?? '', 10)
+    console.log(hashedPassword, 'hashword')
   }
 
-  return await User.findOneAndUpdate(
+  const userUpdateData = await User.findOneAndUpdate(
     {
       _id: new ObjectId(userId),
       isDeleted: false,
@@ -427,17 +430,23 @@ const updateProfile = async ({
     },
   )
     .populate({
-      path: "roleId",
+      path: 'roleId',
       model: roleModel.modelName, // Use the modelName to explicitly provide the model
     })
     .populate({
-      path: "departmentId",
+      path: 'departmentId',
       model: departmentModel.modelName, // Use the modelName to explicitly provide the model
     })
     .select(
-      "-password -tempPassword -resetId -roleCollection -departmentCollection",
-    );
-};
+      '-password -tempPassword -resetId -roleCollection -departmentCollection',
+    )
+
+  if (profileImage && profileImage !== user?.profileImage) {
+    await deleteS3({ key: user?.profileImage })
+  }
+
+  return userUpdateData
+}
 const updateUserByCompany = async ({
   userId,
   companyId,
@@ -455,28 +464,28 @@ const updateUserByCompany = async ({
     roleId,
     password,
     email,
-  } = userData;
-  const User = await getUserCollection(companyId);
+  } = userData
+  const User = await getUserCollection(companyId)
 
   const user = await User.findOne({
     _id: new ObjectId(userId),
     isDeleted: false,
-  });
+  })
 
   if (user === null) {
-    return await generateAPIError(errorMessages.userNotFound, 400);
+    return await generateAPIError(errorMessages.userNotFound, 400)
   }
 
-  const roleModel = await getRoleCollection(companyId);
-  const departmentModel = await getDepartmentCollection(companyId);
+  const roleModel = await getRoleCollection(companyId)
+  const departmentModel = await getDepartmentCollection(companyId)
 
-  let hashedPassword;
+  let hashedPassword
   if (password) {
-    hashedPassword = await hashValue(password ?? "", 10);
-    console.log(hashedPassword, "hashword");
+    hashedPassword = await hashValue(password ?? '', 10)
+    console.log(hashedPassword, 'hashword')
   }
 
-  return await User.findOneAndUpdate(
+  const updateUserData = await User.findOneAndUpdate(
     {
       _id: new ObjectId(userId),
       isDeleted: false,
@@ -522,39 +531,45 @@ const updateUserByCompany = async ({
     },
   )
     .populate({
-      path: "roleId",
+      path: 'roleId',
       model: roleModel.modelName, // Use the modelName to explicitly provide the model
     })
     .populate({
-      path: "departmentId",
+      path: 'departmentId',
       model: departmentModel.modelName, // Use the modelName to explicitly provide the model
     })
     .select(
-      "-password -tempPassword -resetId -roleCollection -departmentCollection",
-    );
-};
+      '-password -tempPassword -resetId -roleCollection -departmentCollection',
+    )
+
+  if (profileImage && profileImage !== user?.profileImage) {
+    await deleteS3({ key: user?.profileImage })
+  }
+
+  return updateUserData
+}
 
 const updateUserByAdmin = async ({
   userId,
   companyId,
   userData,
 }: any): Promise<any> => {
-  const { status } = userData;
-  const User = await getUserCollection(companyId);
+  const { status } = userData
+  const User = await getUserCollection(companyId)
 
   const user = await User.findOne({
     employId: userId,
     isDeleted: false,
-  });
+  })
 
   if (user === null) {
-    return await generateAPIError(errorMessages.userNotFound, 400);
+    return await generateAPIError(errorMessages.userNotFound, 400)
   }
 
-  const roleModel = await getRoleCollection(companyId);
-  const departmentModel = await getDepartmentCollection(companyId);
+  const roleModel = await getRoleCollection(companyId)
+  const departmentModel = await getDepartmentCollection(companyId)
 
-  console.log(user, "statys");
+  console.log(user, 'statys')
 
   return await User.findOneAndUpdate(
     {
@@ -570,26 +585,26 @@ const updateUserByAdmin = async ({
     },
   )
     .populate({
-      path: "roleId",
+      path: 'roleId',
       model: roleModel.modelName, // Use the modelName to explicitly provide the model
     })
     .populate({
-      path: "departmentId",
+      path: 'departmentId',
       model: departmentModel.modelName, // Use the modelName to explicitly provide the model
     })
     .select(
-      "firstName lastName departmentId roleId status profileImage companyId gender emergencyNumber",
-    );
-};
+      'firstName lastName departmentId roleId status profileImage companyId gender emergencyNumber',
+    )
+}
 
 const getUserByStrideId = async (strideId: string): Promise<any> => {
   const userExist = await WorkHistory.findOne({
     strideId,
     isDeleted: false,
-  });
+  })
 
   if (userExist === null) {
-    return await generateAPIError(errorMessages.userNotFound, 400);
+    return await generateAPIError(errorMessages.userNotFound, 400)
   }
   // const data = WorkHistory.aggregate([
   //   {
@@ -599,28 +614,28 @@ const getUserByStrideId = async (strideId: string): Promise<any> => {
   //     },
   //   },
   // ])
-};
+}
 
 const findUserStrideScore = async ({
   userId,
   companyId,
 }: {
-  userId: string;
-  companyId: string;
+  userId: string
+  companyId: string
 }): Promise<any> => {
-  const User = await getUserCollection(companyId);
+  const User = await getUserCollection(companyId)
 
   const data = await User.findOne({
     _id: new ObjectId(userId),
     isDeleted: false,
-  }).select("strideScore _id");
+  }).select('strideScore _id')
 
   if (!data) {
-    return await generateAPIError(errorMessages.userNotFound, 400);
+    return await generateAPIError(errorMessages.userNotFound, 400)
   }
 
-  return data;
-};
+  return data
+}
 
 export const userService = {
   createUser,
@@ -632,4 +647,4 @@ export const userService = {
   updateUserByAdmin,
   getUserByStrideId,
   findUserStrideScore,
-};
+}
