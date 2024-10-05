@@ -71,7 +71,7 @@ const deleteS3 = async ({
 
   const params = {
     Bucket: bucketName, // Your bucket name
-    Key: `businessBazaar/${key}`,
+    Key: `stride/${key}`,
   };
 
   try {
