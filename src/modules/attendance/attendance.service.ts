@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-import { ObjectId } from '../../constants/type.js'
-import { MarkAttendanceData } from './attendance.interface.js'
-import { getAttendanceCollection } from './attendance.model.js'
-import { generateAPIError } from '../../errors/apiError.js'
-import { errorMessages } from '../../constants/messages.js'
-import { getUserCollection } from '../../modules/user/user.model.js'
+import { ObjectId } from "../../constants/type.js";
+import { MarkAttendanceData } from "./attendance.interface.js";
+import { getAttendanceCollection } from "./attendance.model.js";
+import { generateAPIError } from "../../errors/apiError.js";
+import { errorMessages } from "../../constants/messages.js";
+import { getUserCollection } from "../../modules/user/user.model.js";
 
 const markAttendance = async ({
   userId,
@@ -15,15 +15,15 @@ const markAttendance = async ({
   additionalDetails,
   companyId,
 }: MarkAttendanceData): Promise<any> => {
-  const Attendance = await getAttendanceCollection(companyId)
-  const UserModel = await getUserCollection(companyId)
+  const Attendance = await getAttendanceCollection(companyId);
+  const UserModel = await getUserCollection(companyId);
 
   // Ensure 'date' is a valid Date object
   const actualDate =
-    date !== null || date !== undefined ? new Date(date) : new Date()
+    date !== null || date !== undefined ? new Date(date) : new Date();
 
-  const startOfDay = new Date(actualDate.setHours(0, 0, 0, 0))
-  const endOfDay = new Date(actualDate.setHours(23, 59, 59, 999))
+  const startOfDay = new Date(actualDate.setHours(0, 0, 0, 0));
+  const endOfDay = new Date(actualDate.setHours(23, 59, 59, 999));
 
   const attendanceExist = await Attendance.findOne({
     userId: new ObjectId(userId),
@@ -32,20 +32,20 @@ const markAttendance = async ({
       $lt: endOfDay,
     },
     isDeleted: false,
-  })
+  });
 
   // **New Validation**: Prevent duplicate login for the same day
   if (attendanceExist && login) {
-    return await generateAPIError('User is already logged in for the day', 400)
+    return await generateAPIError("User is already logged in for the day", 400);
   }
 
   // **Prevent logOut if attendance does not exist for the day**
   if (logOut && attendanceExist === null) {
-    return await generateAPIError(errorMessages.attendanceNotExists, 400)
+    return await generateAPIError(errorMessages.attendanceNotExists, 400);
   }
 
   if (attendanceExist !== null) {
-    const updatedBreakData = attendanceExist.breakData || []
+    const updatedBreakData = attendanceExist.breakData || [];
 
     // **Rule 1**: Prevent taking/updating breaks if the user has already logged out
     if (
@@ -55,16 +55,16 @@ const markAttendance = async ({
       return await generateAPIError(
         "Can't take or update break after logout",
         400,
-      )
+      );
     }
 
     // **Rule 2**: Prevent taking a new break if the last break doesn't have a breakOut
-    const lastBreak = updatedBreakData[updatedBreakData.length - 1]
+    const lastBreak = updatedBreakData[updatedBreakData.length - 1];
     if (lastBreak && !lastBreak.breakOut && breakData?.breakIn) {
       return await generateAPIError(
         "Can't take a new break without ending the previous one",
         400,
-      )
+      );
     } else if (
       lastBreak?.breakOut &&
       breakData?.breakOut &&
@@ -73,21 +73,24 @@ const markAttendance = async ({
       return await generateAPIError(
         "Can't update breakOut time withOut taking a break",
         400,
-      )
+      );
     }
 
     // **Rule 3**: Prevent logging out if an active break exists (without breakOut)
     if (logOut) {
       if (lastBreak && !lastBreak.breakOut) {
-        return await generateAPIError("Can't log out with an active break", 400)
+        return await generateAPIError(
+          "Can't log out with an active break",
+          400,
+        );
       }
 
       // Ensure logOut time is greater than login time
       if (logOut.time && logOut.time <= attendanceExist.login.time) {
         return await generateAPIError(
-          'logOut time must be greater than login time',
+          "logOut time must be greater than login time",
           400,
-        )
+        );
       }
 
       // Ensure valid logOut coordinates before updating
@@ -129,7 +132,7 @@ const markAttendance = async ({
           {
             logOut: {
               location: {
-                type: 'Point',
+                type: "Point",
                 coordinates: [logOut.location.lon, logOut.location.lat],
               },
               time: new Date(logOut.time) ?? new Date(),
@@ -140,31 +143,31 @@ const markAttendance = async ({
           {
             new: true, // return the updated document
           },
-        )
+        );
 
         // Step 2: Compute loginKey based on login and logOut times
         const loginKey =
           updatedAttendance.login?.time && !updatedAttendance.logOut?.time
-            ? 'loggedIn'
+            ? "loggedIn"
             : updatedAttendance.login?.time && updatedAttendance.logOut?.time
-            ? 'loggedOut'
-            : null // set default value if neither condition is met
+            ? "loggedOut"
+            : null; // set default value if neither condition is met
 
         // Step 3: Compute breakStatus based on breakData
-        let breakStatus = 'NA' // default value if breakData is empty
+        let breakStatus = "NA"; // default value if breakData is empty
         if (updatedAttendance.breakData?.length > 0) {
           const lastBreak =
-            updatedAttendance.breakData[updatedAttendance.breakData.length - 1]
+            updatedAttendance.breakData[updatedAttendance.breakData.length - 1];
 
           if (lastBreak.breakIn === null && lastBreak.breakOut === null) {
-            breakStatus = 'NA'
+            breakStatus = "NA";
           } else if (
             lastBreak.breakIn !== null &&
             lastBreak.breakOut === null
           ) {
-            breakStatus = 'breakIn'
+            breakStatus = "breakIn";
           } else {
-            breakStatus = 'breakOut'
+            breakStatus = "breakOut";
           }
         }
 
@@ -173,9 +176,9 @@ const markAttendance = async ({
           ...updatedAttendance.toObject(),
           loginKey,
           breakStatus,
-        }
+        };
       } else {
-        return await generateAPIError('Invalid logOut location', 400)
+        return await generateAPIError("Invalid logOut location", 400);
       }
     }
 
@@ -186,7 +189,7 @@ const markAttendance = async ({
         return await generateAPIError(
           "Can't record breakOut without breakIn",
           400,
-        )
+        );
       }
 
       // Validate that breakOut time is greater than breakIn time
@@ -196,20 +199,20 @@ const markAttendance = async ({
         breakData.breakOut <= lastBreak.breakIn
       ) {
         return await generateAPIError(
-          'breakOut time must be greater than breakIn time',
+          "breakOut time must be greater than breakIn time",
           400,
-        )
+        );
       }
 
       // Update or add break data
       if (lastBreak && !lastBreak.breakOut) {
         updatedBreakData[updatedBreakData.length - 1].breakOut =
-          breakData.breakOut
+          breakData.breakOut;
       } else {
         updatedBreakData.push({
           breakIn: breakData.breakIn,
           breakOut: breakData.breakOut,
-        })
+        });
       }
 
       const updatedAttendance = await Attendance.findOneAndUpdate(
@@ -228,27 +231,27 @@ const markAttendance = async ({
         {
           new: true,
         },
-      )
+      );
 
       const loginKey =
         updatedAttendance.login?.time && !updatedAttendance.logOut?.time
-          ? 'loggedIn'
+          ? "loggedIn"
           : updatedAttendance.login?.time && updatedAttendance.logOut?.time
-          ? 'loggedOut'
-          : null // set default value if neither condition is met
+          ? "loggedOut"
+          : null; // set default value if neither condition is met
 
       // Step 3: Compute breakStatus based on breakData
-      let breakStatus = 'NA' // default value if breakData is empty
+      let breakStatus = "NA"; // default value if breakData is empty
       if (updatedAttendance.breakData?.length > 0) {
         const lastBreak =
-          updatedAttendance.breakData[updatedAttendance.breakData.length - 1]
+          updatedAttendance.breakData[updatedAttendance.breakData.length - 1];
 
         if (lastBreak.breakIn === null && lastBreak.breakOut === null) {
-          breakStatus = 'NA'
+          breakStatus = "NA";
         } else if (lastBreak.breakIn !== null && lastBreak.breakOut === null) {
-          breakStatus = 'breakIn'
+          breakStatus = "breakIn";
         } else {
-          breakStatus = 'breakOut'
+          breakStatus = "breakOut";
         }
       }
 
@@ -257,12 +260,12 @@ const markAttendance = async ({
         ...updatedAttendance.toObject(),
         loginKey,
         breakStatus,
-      }
+      };
     }
   } else {
     // Ensure valid login coordinates when creating new attendance
     if (!login?.location?.lon || !login?.location?.lat) {
-      return await generateAPIError('Invalid login location', 400)
+      return await generateAPIError("Invalid login location", 400);
     }
 
     // Creating a new attendance entry
@@ -272,36 +275,36 @@ const markAttendance = async ({
       date: new Date(date),
       login: {
         location: {
-          type: 'Point',
+          type: "Point",
           coordinates: [login.location.lon, login.location.lat],
         },
         time: new Date(login.time) ?? new Date(),
       },
       companyId,
       ...(additionalDetails && { additionalDetails }),
-    }
+    };
 
-    const updatedAttendance = await Attendance.create(newAttendance)
+    const updatedAttendance = await Attendance.create(newAttendance);
 
     const loginKey =
       updatedAttendance.login?.time && !updatedAttendance.logOut?.time
-        ? 'loggedIn'
+        ? "loggedIn"
         : updatedAttendance.login?.time && updatedAttendance.logOut?.time
-        ? 'loggedOut'
-        : null // set default value if neither condition is met
+        ? "loggedOut"
+        : null; // set default value if neither condition is met
 
     // Step 3: Compute breakStatus based on breakData
-    let breakStatus = 'NA' // default value if breakData is empty
+    let breakStatus = "NA"; // default value if breakData is empty
     if (updatedAttendance.breakData?.length > 0) {
       const lastBreak =
-        updatedAttendance.breakData[updatedAttendance.breakData.length - 1]
+        updatedAttendance.breakData[updatedAttendance.breakData.length - 1];
 
       if (lastBreak.breakIn === null && lastBreak.breakOut === null) {
-        breakStatus = 'NA'
+        breakStatus = "NA";
       } else if (lastBreak.breakIn !== null && lastBreak.breakOut === null) {
-        breakStatus = 'breakIn'
+        breakStatus = "breakIn";
       } else {
-        breakStatus = 'breakOut'
+        breakStatus = "breakOut";
       }
     }
 
@@ -310,26 +313,26 @@ const markAttendance = async ({
       ...updatedAttendance.toObject(),
       loginKey,
       breakStatus,
-    }
+    };
   }
-  console.log('hello how are you')
-}
+  console.log("hello how are you");
+};
 
 const getUserAttendance = async ({
   companyId,
   userId,
   date,
 }: {
-  companyId: string
-  userId: string
-  date: Date
+  companyId: string;
+  userId: string;
+  date: Date;
 }): Promise<any> => {
   // Ensure 'date' is a valid Date object
-  const actualDate = new Date(date ?? new Date())
+  const actualDate = new Date(date ?? new Date());
 
-  const startOfDay = new Date(actualDate.setHours(0, 0, 0, 0))
-  const endOfDay = new Date(actualDate.setHours(23, 59, 59, 999))
-  const Attendance = await getAttendanceCollection(companyId)
+  const startOfDay = new Date(actualDate.setHours(0, 0, 0, 0));
+  const endOfDay = new Date(actualDate.setHours(23, 59, 59, 999));
+  const Attendance = await getAttendanceCollection(companyId);
   // const UserModel = await getUserCollection(companyId)
 
   const data = await Attendance.aggregate([
@@ -355,20 +358,20 @@ const getUserAttendance = async ({
           $cond: {
             if: {
               $and: [
-                { $gt: ['$login.time', null] }, // login.time exists
-                { $not: [{ $gt: ['$logOut.time', null] }] }, // logOut.time does not exist
+                { $gt: ["$login.time", null] }, // login.time exists
+                { $not: [{ $gt: ["$logOut.time", null] }] }, // logOut.time does not exist
               ],
             },
-            then: 'loggedIn',
+            then: "loggedIn",
             else: {
               $cond: {
                 if: {
                   $and: [
-                    { $gt: ['$login.time', null] }, // login.time exists
-                    { $gt: ['$logOut.time', null] }, // logOut.time exists
+                    { $gt: ["$login.time", null] }, // login.time exists
+                    { $gt: ["$logOut.time", null] }, // logOut.time exists
                   ],
                 },
-                then: 'loggedOut',
+                then: "loggedOut",
                 else: null, // Optional: can set a default value if neither condition is met
               },
             },
@@ -376,38 +379,38 @@ const getUserAttendance = async ({
         },
         breakStatus: {
           $cond: {
-            if: { $gt: [{ $size: '$breakData' }, 0] },
+            if: { $gt: [{ $size: "$breakData" }, 0] },
             then: {
               $let: {
                 vars: {
-                  lastBreak: { $arrayElemAt: ['$breakData', -1] },
+                  lastBreak: { $arrayElemAt: ["$breakData", -1] },
                 },
                 in: {
                   $cond: {
                     if: {
                       $and: [
-                        { $eq: ['$$lastBreak.breakIn', null] },
-                        { $eq: ['$$lastBreak.breakOut', null] },
+                        { $eq: ["$$lastBreak.breakIn", null] },
+                        { $eq: ["$$lastBreak.breakOut", null] },
                       ],
                     },
-                    then: 'NA',
+                    then: "NA",
                     else: {
                       $cond: {
                         if: {
                           $and: [
-                            { $ne: ['$$lastBreak.breakIn', null] },
-                            { $not: [{ $gt: ['$$lastBreak.breakOut', null] }] },
+                            { $ne: ["$$lastBreak.breakIn", null] },
+                            { $not: [{ $gt: ["$$lastBreak.breakOut", null] }] },
                           ],
                         },
-                        then: 'breakIn',
-                        else: 'breakOut',
+                        then: "breakIn",
+                        else: "breakOut",
                       },
                     },
                   },
                 },
               },
             },
-            else: 'NA', // If breakData array is empty, default to "NA"
+            else: "NA", // If breakData array is empty, default to "NA"
           },
         },
         isDeleted: 1,
@@ -416,12 +419,12 @@ const getUserAttendance = async ({
         __v: 1,
       },
     },
-  ])
+  ]);
 
-  return data[0] ?? {}
-}
+  return data[0] ?? {};
+};
 
 export const attendanceService = {
   markAttendance,
   getUserAttendance,
-}
+};

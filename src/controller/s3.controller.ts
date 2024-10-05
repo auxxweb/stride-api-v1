@@ -1,89 +1,88 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { v4 as uuidv4 } from 'uuid'
-import { errorWrapper } from '../middleware/errorWrapper.js'
-import aws from 'aws-sdk'
-import { Request, Response, NextFunction } from 'express'
-import { responseUtils } from '../utils/response.utils.js'
-import { appConfig } from '../config/appConfig.js'
+import { v4 as uuidv4 } from "uuid";
+import { errorWrapper } from "../middleware/errorWrapper.js";
+import aws from "aws-sdk";
+import { Request, Response, NextFunction } from "express";
+import { responseUtils } from "../utils/response.utils.js";
+import { appConfig } from "../config/appConfig.js";
 
-const region = appConfig.awsBucketRegion
-const accessKeyId = appConfig.awsAccessKey
-const secretAccessKey = appConfig.awsSecretKey
-const bucket = appConfig.awsBucketName
-const folder = appConfig.awsFolder
+const region = appConfig.awsBucketRegion;
+const accessKeyId = appConfig.awsAccessKey;
+const secretAccessKey = appConfig.awsSecretKey;
+const bucket = appConfig.awsBucketName;
+const folder = appConfig.awsFolder;
 
 const s3 = new aws.S3({
   region,
   accessKeyId,
   secretAccessKey,
-  signatureVersion: 'v4',
-})
+  signatureVersion: "v4",
+});
 
 const getS3Urls = errorWrapper(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { file_names } = req.body // array of file names with extension
+    const { file_names } = req.body; // array of file names with extension
 
-    const urls = [] // array of objects {file_name, url, file_type}
+    const urls = []; // array of objects {file_name, url, file_type}
 
     for (let i = 0; i < file_names.length; i++) {
-      const uniqueCode = uuidv4()
-      console.log(uniqueCode, 'u-code')
+      const uniqueCode = uuidv4();
+      console.log(uniqueCode, "u-code");
 
       const params = {
         Bucket: bucket,
         Key: `${folder}/STD_${uniqueCode}`,
         Expires: 60,
-      }
-      const url = await s3.getSignedUrlPromise('putObject', params)
-      let file_type = file_names[i].split('.')
-      file_type = file_type[file_type.length - 1]
-      urls.push({ file_name: `${folder}/STD_${uniqueCode}`, file_type, url })
+      };
+      const url = await s3.getSignedUrlPromise("putObject", params);
+      let file_type = file_names[i].split(".");
+      file_type = file_type[file_type.length - 1];
+      urls.push({ file_name: `STD_${uniqueCode}`, file_type, url });
     }
 
     return responseUtils.success(res, {
       data: urls,
       status: 200,
-    })
+    });
   },
-)
+);
 
 interface DeleteS3Params {
-  bucketName?: string
-  key: string
+  bucketName?: string;
+  key: string;
 }
 
 const deleteS3 = async ({
   bucketName = bucket,
   key,
 }: DeleteS3Params): Promise<any> => {
+  console.log(key, "key", bucketName);
 
-  console.log(key,"key",bucketName);
-  
   // Ensure that AWS region and credentials are properly configured
   aws.config.update({
     region,
     accessKeyId,
     secretAccessKey,
-    signatureVersion: 'v4',
-  })
+    signatureVersion: "v4",
+  });
 
   // Create an instance of the S3 client
-  const s3 = new aws.S3()
+  const s3 = new aws.S3();
 
   const params = {
     Bucket: bucketName, // Your bucket name
-    Key: `businessBazaar/${key}`, 
-  }
+    Key: `businessBazaar/${key}`,
+  };
 
   try {
     // Delete the image
-    const result = await s3.deleteObject(params).promise()
-    console.log('File deleted successfully:', result)
-    return result // Ensure you return the result
+    const result = await s3.deleteObject(params).promise();
+    console.log("File deleted successfully:", result);
+    return result; // Ensure you return the result
   } catch (error) {
-    console.error('Error deleting image:', error)
-    throw error // Rethrow the error to handle it in the calling function
+    console.error("Error deleting image:", error);
+    throw error; // Rethrow the error to handle it in the calling function
   }
-}
+};
 
-export { getS3Urls, deleteS3 }
+export { getS3Urls, deleteS3 };
