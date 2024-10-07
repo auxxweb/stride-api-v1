@@ -20,4 +20,5 @@ export const appConfig = {
   companyStartCount: process.env.CMPNY_START_COUNT ?? 10000,
   userStartCount: process.env.USER_START_COUNT ?? 10000,
   awsFolder: process.env.AWS_S3_FOLDER ?? "",
+s3Url:process.env.AWS_S3_URL ??""
 };
